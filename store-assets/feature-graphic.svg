@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1423"/>
+      <stop offset=".62" stop-color="#070b14"/>
+      <stop offset="1" stop-color="#152139"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe0a1"/>
+      <stop offset=".55" stop-color="#f5b942"/>
+      <stop offset="1" stop-color="#c98e22"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#131e30"/>
+      <stop offset="1" stop-color="#090f1b"/>
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="500" fill="url(#background)"/>
+  <circle cx="788" cy="160" r="240" fill="#d69d39" opacity=".12" filter="url(#shadow)"/>
+  <path d="M0 385h683M0 316h683M0 247h683M0 178h683M101 0v500M209 0v500M317 0v500M425 0v500M533 0v500M641 0v500" fill="none" stroke="#31435d" opacity=".20"/>
+  <path d="M0 358 78 348 126 356 182 304 241 314 301 264 363 281 428 221 487 238 546 188 608 199 687 126" fill="none" stroke="#f5b942" stroke-width="2" opacity=".17"/>
+  <g font-family="Arial, sans-serif">
+    <g transform="translate(74 66)">
+      <rect width="38" height="38" rx="11" fill="url(#metal)"/>
+      <g stroke="#1a1204" stroke-width="2.8" stroke-linecap="round">
+        <path d="M15 10v21M25 13v20"/>
+      </g>
+      <g fill="#1a1204"><rect x="11" y="15" width="8" height="12" rx="2"/><rect x="21" y="19" width="8" height="9" rx="2"/></g>
+    </g>
+    <text x="126" y="91" fill="#e9c17c" font-size="15" font-weight="700" letter-spacing="3">FOREX SIGNALS LIVE</text>
+    <text x="74" y="198" fill="#f4f6fb" font-size="56" font-weight="700">Forex &amp; Gold</text>
+    <text x="74" y="263" fill="#f4f6fb" font-size="50" font-weight="700">Signals with <tspan fill="#f5b942">TP/SL</tspan></text>
+    <text x="76" y="317" fill="#abb8cc" font-size="21">Entry, stop loss and take-profit levels</text>
+    <path d="M75 369h512" stroke="#31435d"/>
+    <circle cx="84" cy="415" r="5" fill="#1fd18b"/>
+    <text x="101" y="421" fill="#e2e8f2" font-size="15" font-weight="700" letter-spacing="1">8 MARKETS</text>
+    <circle cx="270" cy="415" r="5" fill="#f5b942"/>
+    <text x="287" y="421" fill="#e2e8f2" font-size="15" font-weight="700" letter-spacing="1">DEFINED RISK LEVELS</text>
+  </g>
+  <rect x="704" y="20" width="290" height="592" rx="48" fill="#060a11" stroke="#687991" stroke-width="4"/>
+  <rect x="714" y="30" width="270" height="572" rx="40" fill="url(#screen)"/>
+  <rect x="794" y="38" width="110" height="18" rx="9" fill="#060a11"/>
+  <g font-family="Arial, sans-serif">
+    <text x="738" y="102" fill="#f4f6fb" font-size="25" font-weight="700">Signals</text>
+    <text x="738" y="127" fill="#9aa4b8" font-size="12">Major pairs and gold</text>
+    <rect x="731" y="148" width="236" height="297" rx="18" fill="#152035" stroke="#33415a"/>
+    <rect x="748" y="166" width="55" height="26" rx="8" fill="#143c37"/>
+    <text x="758" y="184" fill="#45e4a7" font-size="13" font-weight="700">BUY</text>
+    <text x="747" y="225" fill="#f4f6fb" font-size="26" font-weight="700">EUR/USD</text>
+    <text x="748" y="245" fill="#a9b4c6" font-size="11">Example trade plan</text>
+    <path d="M748 265h202" stroke="#34425a"/>
+    <text x="748" y="291" fill="#a9b4c6" font-size="12">ENTRY</text>
+    <text x="950" y="291" fill="#f4f6fb" font-size="15" font-weight="700" text-anchor="end">1.08520</text>
+    <text x="748" y="326" fill="#a9b4c6" font-size="12">STOP LOSS</text>
+    <text x="950" y="326" fill="#ff7f8c" font-size="15" font-weight="700" text-anchor="end">1.08120</text>
+    <text x="748" y="361" fill="#a9b4c6" font-size="12">TAKE PROFIT 1</text>
+    <text x="950" y="361" fill="#55e5ae" font-size="15" font-weight="700" text-anchor="end">1.08920</text>
+    <text x="748" y="396" fill="#a9b4c6" font-size="12">TAKE PROFIT 2</text>
+    <text x="950" y="396" fill="#55e5ae" font-size="15" font-weight="700" text-anchor="end">1.09320</text>
+    <rect x="731" y="463" width="236" height="40" rx="12" fill="#1b2940"/>
+    <text x="849" y="488" fill="#adb9ca" font-size="11" text-anchor="middle" letter-spacing="2">ILLUSTRATIVE UI</text>
+  </g>
+</svg>

@@ -1,0 +1,44 @@
+== 1. Accounts (API + email) ==
+  PASS register returns 201 + token
+  PASS new account starts unverified
+  PASS verification email delivered via SMTP — Verify your email for Forex Signals Live
+  PASS wrong code rejected
+  PASS correct code verifies email
+  PASS email preferences saved
+  PASS wrong password rejected
+  PASS signals require login
+
+== 2. 25 days of hourly cron runs on simulated prices ==
+  cron events: {"NEW":271,"closed":266,"TP1 hit":141,"report":24}
+  PASS signals were published and tracked — 271 signals, 266 closed, 5 running
+  PASS every closed signal has a result, pips and close time
+  PASS TP results are wins and SL results are losses
+  PASS market prices updated for all pairs
+
+== 3. Reports (API) ==
+  PASS daily report — 20 periods, 200 closed signals, latest with data: Fri, Sep 25, 2026 6W/4L 238 pips
+  PASS daily report skips weekends
+  PASS weekly report — 12 periods, 266 closed signals, latest with data: Sep 21 – Sep 27, 2026 32W/22L 1172.4 pips
+  PASS monthly report — 12 periods, 266 closed signals, latest with data: September 2026 142W/124L 3852.3 pips
+  PASS all-time summary matches database — 266 closed, 53.4% win rate, 3852.3 pips
+  PASS report drill-down lists that period's signals — September 2026: 266 signals
+
+== 4. Emails received ==
+  Ada (verified): 562 emails {"new signal":271,"TP1 reached":0,"hit TP2":97,"stopped out":124,"closed":45,"expired":0,"Daily report":20,"Weekly report":3,"Monthly report":1}
+  PASS verified user gets new-signal emails
+  PASS verified user gets win and loss emails
+  PASS verified user gets daily + weekly reports
+  PASS unverified user gets only the verification email — 1 email(s)
+  PASS alert emails carry a one-click unsubscribe link
+  PASS unsubscribe link turns off that email type
+
+  sample subjects:
+   [verify] Verify your email for Forex Signals Live
+   [signal] BUY GBP/USD @ 1.18913 — new signal
+   [daily] Daily report · Mon, Aug 31, 2026: 0W / 0L · 0.0 pips
+   [loss] ❌ USD/CAD stopped out -37.9 pips
+   [win] ✅ USD/JPY hit TP2 +97.4 pips
+   [monthly] Monthly report · August 2026: 0W / 0L · 0.0 pips
+   [weekly] Weekly report · Aug 31 – Sep 6, 2026: 26W / 17L · +1,096.2 pips
+
+RESULT: 24 passed, 0 failed

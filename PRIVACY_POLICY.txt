@@ -1,0 +1,150 @@
+PRIVACY POLICY - FOREX SIGNALS LIVE
+Effective date: September 29, 2026
+
+Forex Signals Live ("the App") is operated by Swiftmynd Technologies Ltd
+("we", "us", "our"). This policy describes how we handle information when
+you use the App and its related online service. Contact us about this policy
+at swalafblog@gmail.com.
+
+1. INFORMATION WE HANDLE
+
+Account information: If you register for the live service, we receive the
+name, email address and password you provide. We store a password hash, not
+your plaintext password. We also store your account creation and last-login
+times, email verification status, selected markets/watchlist, and email and
+push notification preferences. One-time verification and password-reset
+codes are stored as hashes and stop being valid after 15 minutes. Their
+database records are not automatically erased at expiry; they are removed
+when the account is deleted.
+
+Security and service information: The server uses your IP address and, for
+some requests, your email address in temporary rate-limit records to protect
+registration and authentication. Our web host may keep ordinary server
+access and error logs, such as IP address, request time, requested route and
+technical error details. The App requests market prices, signals and reports
+from our API, which receives network information needed to respond.
+
+Messages: After you verify your address, new-signal, result, weekly and
+monthly report emails are enabled by default; daily report emails are off
+by default. Our server may hold your address and the subject and content of
+queued messages. If you contact support, we receive the information you
+choose to send. If you tap an external contact link, the destination service
+may receive your request and any message you choose to send.
+
+Device and local information: The App stores an authentication token in
+secure device storage. It keeps an account-profile cache (including name,
+email and preferences), onboarding state and limited review/exit-prompt usage
+data in local app storage. Calculator inputs are used for on-device
+calculations; the App does not connect to your broker account or collect
+payment-card or trading-account credentials through these features.
+
+Optional push data: If Firebase push is configured, the App initializes
+Firebase Cloud Messaging (FCM) at startup. FCM may process an app-instance
+or device token. After sign-in, the App synchronizes signal, result and
+report topic subscriptions with your preferences even if notification
+display permission is denied; device settings control whether notifications
+appear. Our server sends to topics and does not store device tokens. Push
+may be unavailable if Firebase is not configured.
+
+Demo mode: If the App was built without a live API URL, it uses simulated
+local prices and results instead of creating an account on our server. A
+demo profile containing the name, email and preferences you enter is saved
+on your device. It remains after logout and is removed by Delete account.
+App features that open external links or use platform/third-party services
+can still involve those services as described below.
+
+2. HOW WE USE INFORMATION
+
+We use this information to create and secure accounts, authenticate sign-in,
+send verification and password-reset emails, remember preferences, provide
+market and signal information, deliver the alerts and reports you select,
+respond to support requests, prevent abuse, and maintain and troubleshoot the
+service. We do not sell your account information or use this App to process
+payments. Market data and modeled signals are general information, not a
+record of your personal trades.
+
+Where applicable, we process information to provide the service you request,
+for security and service operations, with your choice to receive optional
+notifications, and as required by law. You may turn off optional alerts and
+emails as explained below.
+
+3. SERVICE PROVIDERS AND EXTERNAL LINKS
+
+Our hosting provider processes the account database and ordinary server
+logs. Our email host or SMTP provider processes the address and content
+necessary to deliver verification codes, alerts and reports. If push is
+enabled, Google Firebase processes push-delivery information. The backend
+requests price candles for selected markets from Twelve Data; it does not
+need to send your account name or email to Twelve Data for that request.
+
+The App uses Google Fonts, which may download font files and receive standard
+network information such as your IP address. The App may ask Google Play to
+show an in-app review prompt after certain usage; Google decides whether to
+display it. If you choose to open WhatsApp, LinkedIn, Buy Me a Coffee, email
+or other external links, those third parties handle information under their
+own privacy terms. Opening an external link is your choice. We are not
+responsible for the privacy practices of independent sites or services.
+
+Depending on where you and our service providers are located, information
+may be processed outside your country. We do not currently include an
+advertising or third-party analytics SDK in the App.
+
+4. YOUR CHOICES
+
+You can change market, email and push preferences under Profile >
+Notifications. Verified email recipients can also use the unsubscribe link
+in an alert or report email. An email already queued before a preference
+change or unsubscribe request may still be delivered. Your device settings
+can block push messages. Disabling notifications does not stop essential
+account messages such as verification and password-reset emails that you
+request.
+
+You can change your displayed name and password in the App. To request
+access to, correction of, or deletion of other personal information, email
+swalafblog@gmail.com. We may need to verify your identity before acting on a
+request, and some information may be retained where required by law or for
+security. Available rights vary by location.
+
+5. ACCOUNT DELETION AND RETENTION
+
+You can request account deletion in Profile > Delete account; the App asks
+for your password. This removes your user record and associated verification
+or reset-code records from the live database and clears the local session
+token and cached profile when the App completes logout. Shared market
+signals and aggregate results are not linked to your account and remain.
+
+Important limitation: the current server does not automatically delete
+previously queued, sent or failed email records when an account is deleted.
+These records can contain your address and message content, and a pending
+message could still be sent after deletion. Sent email queue records older
+than 30 days are removed by an occasional worker cleanup; pending and failed
+records have no automatic deletion time. Rate-limit records older than one
+day are also cleared opportunistically. Hosting logs, backups and copies
+already delivered to an email provider or inbox may be retained under those
+providers' policies. For manual removal of remaining email records, contact
+swalafblog@gmail.com. We will review the request and tell you what can be
+removed. We do not promise immediate deletion of all copies.
+
+6. SECURITY
+
+The live App is intended to use HTTPS for API requests. We hash passwords,
+use signed authentication tokens, keep the App token in secure device storage,
+and use server-side access controls and rate limits. No internet or storage
+system can be guaranteed completely secure. Keep your password private and
+contact us if you suspect unauthorized account access.
+
+7. CHILDREN
+
+The App is intended for adults aged 18 or older. We do not knowingly seek
+personal information from children. If you believe a child has registered,
+contact swalafblog@gmail.com so we can investigate and remove the account
+subject to the retention limits above.
+
+8. CHANGES AND CONTACT
+
+We may update this policy as the App, our providers or legal requirements
+change. We will post the revised text with a new effective date. Questions,
+requests and complaints can be sent to:
+
+Swiftmynd Technologies Ltd
+Email: swalafblog@gmail.com

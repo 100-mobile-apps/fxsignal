@@ -1,0 +1,14 @@
+Options -Indexes
+RewriteEngine On
+
+# Pass the Authorization header through to PHP (needed on many cPanel hosts)
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Block direct access to code, cron and config
+RewriteRule ^(src|cron)(/|$) - [F,L]
+RewriteRule \.(sql|md|json|lock)$ - [F,L]
+
+# Everything else goes to the router
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]

@@ -1,0 +1,43 @@
+import '../models/models.dart';
+
+class ApiException implements Exception {
+  final String message;
+  final int status;
+  const ApiException(this.message, [this.status = 0]);
+
+  bool get isUnauthorized => status == 401;
+
+  @override
+  String toString() => message;
+}
+
+/// Everything the app needs from the backend. Implemented by [RemoteApi]
+/// (your cPanel server) and [DemoApi] (offline simulation).
+abstract class Api {
+  String? token;
+
+  Future<AuthResult> login(String email, String password);
+  Future<AuthResult> register(String name, String email, String password);
+  Future<String> forgotPassword(String email);
+  Future<AuthResult> resetPassword(String email, String code, String password);
+
+  Future<AppUser> verifyEmail(String code);
+  Future<String> resendVerification();
+
+  Future<AppUser> me();
+  Future<AppUser> updateName(String name);
+  Future<String> changePassword(String current, String next);
+  Future<void> deleteAccount(String password);
+  Future<AppUser> updateNotifications(NotificationPrefs prefs);
+  Future<AppUser> updateWatchlist(List<String> symbols);
+
+  Future<SignalPage> signals(
+      {required bool running, int page = 1, DateTime? from, DateTime? to});
+  Future<ReportsData> reports(String period);
+  Future<TradeSignal> signal(int id);
+  Future<Stats> stats(int days);
+  Future<List<PriceQuote>> prices();
+
+  /// Which developer links to show (server-controlled). Keys: coffee, whatsapp, hire.
+  Future<Map<String, bool>> promo();
+}
