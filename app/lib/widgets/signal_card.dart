@@ -4,6 +4,7 @@ import '../core/format.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
 import 'common.dart';
+import 'money_widgets.dart';
 
 Color resultColor(TradeSignal s) {
   if (s.isRunning) return s.tp1Hit ? AppColors.buy : AppColors.info;
@@ -127,6 +128,8 @@ class SignalCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 10),
+                    SignalMoneyLine(signal: s),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -134,7 +137,7 @@ class SignalCard extends StatelessWidget {
                         const Spacer(),
                         const Icon(Icons.bolt_rounded, size: 15, color: AppColors.gold),
                         const SizedBox(width: 3),
-                        Text('${s.confidence}% strength',
+                        Text(s.strategyName,
                             style: const TextStyle(fontSize: 12, color: AppColors.text2)),
                       ],
                     ),

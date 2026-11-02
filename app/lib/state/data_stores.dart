@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../data/api.dart';
 import '../models/models.dart';
+import '../models/money.dart';
 
 typedef UnauthorizedHandler = void Function();
 
@@ -171,5 +172,72 @@ class MarketStore extends ChangeNotifier with _Guard {
       loading = false;
       notifyListeners();
     }
+  }
+}
+
+/// Dollars and pips at the user's account size and risk, plus the strategy list.
+class MoneyStore extends ChangeNotifier with _Guard {
+  final Api api;
+  MoneyStore(this.api);
+
+  ResultsData? data;
+  StrategiesData? strategies;
+  bool loading = false;
+  String? error;
+  double account = 10000;
+  double risk = 1;
+  String? pairsFilter; // null = every market, 'best' = best markets now
+  String? strategyFilter; // null = every strategy
+  int _request = 0;
+
+  void useDefaults(double accountSize, double riskPct) {
+    account = accountSize;
+    risk = riskPct;
+  }
+
+  Future<void> load() async {
+    final id = ++_request;
+    loading = true;
+    error = null;
+    notifyListeners();
+    try {
+      final r = await api.results(account: account, risk: risk, strategy: strategyFilter, pairs: pairsFilter);
+      if (id == _request) data = r;
+      final s = await api.strategies();
+      if (id == _request) strategies = s;
+    } catch (e) {
+      if (id == _request) error = errorText(e);
+    } finally {
+      if (id == _request) {
+        loading = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> setAccount(double v) async {
+    account = v;
+    await load();
+  }
+
+  Future<void> setRisk(double v) async {
+    risk = v;
+    await load();
+  }
+
+  Future<void> setPairs(String? v) async {
+    pairsFilter = v;
+    await load();
+  }
+
+  Future<void> setStrategyFilter(String? v) async {
+    strategyFilter = v;
+    await load();
+  }
+
+  void clear() {
+    data = null;
+    strategies = null;
+    error = null;
   }
 }

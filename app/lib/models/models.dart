@@ -106,6 +106,40 @@ class NotificationPrefs {
       );
 }
 
+/// Strategy, account size and risk the money figures are based on.
+class UserPrefs {
+  final String strategy;
+  final bool strategyChosen;
+  final double accountSize;
+  final double riskPct;
+  const UserPrefs(
+      {this.strategy = 'classic',
+      this.strategyChosen = false,
+      this.accountSize = 10000,
+      this.riskPct = 1});
+
+  factory UserPrefs.fromJson(Map<String, dynamic> j) => UserPrefs(
+        strategy: j['strategy'] as String? ?? 'classic',
+        strategyChosen: j['strategy_chosen'] as bool? ?? false,
+        accountSize: _dn(j['account_size']) ?? 10000,
+        riskPct: _dn(j['risk_pct']) ?? 1,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'strategy': strategy,
+        'strategy_chosen': strategyChosen,
+        'account_size': accountSize,
+        'risk_pct': riskPct,
+      };
+
+  UserPrefs copyWith({String? strategy, bool? strategyChosen, double? accountSize, double? riskPct}) => UserPrefs(
+        strategy: strategy ?? this.strategy,
+        strategyChosen: strategyChosen ?? this.strategyChosen,
+        accountSize: accountSize ?? this.accountSize,
+        riskPct: riskPct ?? this.riskPct,
+      );
+}
+
 class AppUser {
   final int id;
   final String name;
@@ -114,6 +148,7 @@ class AppUser {
   final bool emailVerified;
   final NotificationPrefs notifications;
   final List<String> watchlist;
+  final UserPrefs prefs;
 
   const AppUser({
     required this.id,
@@ -123,6 +158,7 @@ class AppUser {
     this.emailVerified = false,
     required this.notifications,
     required this.watchlist,
+    this.prefs = const UserPrefs(),
   });
 
   factory AppUser.fromJson(Map<String, dynamic> j) => AppUser(
@@ -134,6 +170,7 @@ class AppUser {
         notifications: NotificationPrefs.fromJson(
             (j['notifications'] as Map?)?.cast<String, dynamic>() ?? {}),
         watchlist: (j['watchlist'] as List?)?.cast<String>() ?? const [],
+        prefs: UserPrefs.fromJson((j['preferences'] as Map?)?.cast<String, dynamic>() ?? {}),
       );
 
   Map<String, dynamic> toJson() => {
@@ -144,13 +181,15 @@ class AppUser {
         'email_verified': emailVerified,
         'notifications': notifications.toJson(),
         'watchlist': watchlist,
+        'preferences': prefs.toJson(),
       };
 
   AppUser copyWith(
           {String? name,
           bool? emailVerified,
           NotificationPrefs? notifications,
-          List<String>? watchlist}) =>
+          List<String>? watchlist,
+          UserPrefs? prefs}) =>
       AppUser(
         id: id,
         name: name ?? this.name,
@@ -159,6 +198,7 @@ class AppUser {
         emailVerified: emailVerified ?? this.emailVerified,
         notifications: notifications ?? this.notifications,
         watchlist: watchlist ?? this.watchlist,
+        prefs: prefs ?? this.prefs,
       );
 }
 
@@ -175,6 +215,7 @@ class TradeSignal {
   final bool isRunning;
   final SignalResult? result;
   final DateTime? tp1HitAt;
+  final DateTime? lockHitAt;
   final DateTime openedAt;
   final DateTime? expiresAt;
   final DateTime? closedAt;
@@ -183,6 +224,10 @@ class TradeSignal {
   final double? currentPrice;
   final double? livePips;
   final List<Candle> candles;
+  final String strategy;
+  final String strategyName;
+  final double pipValuePerLot;
+  final double costPips;
 
   const TradeSignal({
     required this.id,
@@ -206,6 +251,11 @@ class TradeSignal {
     required this.currentPrice,
     required this.livePips,
     this.candles = const [],
+    this.lockHitAt,
+    this.strategy = 'classic',
+    this.strategyName = 'Classic',
+    this.pipValuePerLot = 10,
+    this.costPips = 1.5,
   });
 
   static SignalResult? _result(String? r) => switch (r) {
@@ -241,6 +291,11 @@ class TradeSignal {
                 ?.map((c) => Candle.fromList(c as List))
                 .toList() ??
             const [],
+        lockHitAt: _t(j['lock_hit_at']),
+        strategy: j['strategy'] as String? ?? 'classic',
+        strategyName: j['strategy_name'] as String? ?? 'Classic',
+        pipValuePerLot: _dn(j['pip_value_per_lot']) ?? 10,
+        costPips: _dn(j['cost_pips']) ?? 1.5,
       );
 
   String get direction => isBuy ? 'BUY' : 'SELL';
@@ -254,6 +309,7 @@ class TradeSignal {
       };
 
   bool get tp1Hit => tp1HitAt != null;
+  bool get lockHit => lockHitAt != null;
   bool get isWin => (pips ?? 0) > 0;
 
   double _pipsTo(double price) =>

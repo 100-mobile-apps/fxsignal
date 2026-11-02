@@ -9,6 +9,7 @@ import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/signal_card.dart';
 import 'legal_screen.dart';
+import 'money_screen.dart';
 import 'reports_view.dart';
 import 'signals_screen.dart';
 
@@ -99,6 +100,29 @@ class _Overview extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
           children: [
             const DemoBanner(),
+            GlassCard(
+              borderColor: AppColors.gold.withValues(alpha: 0.5),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MoneyScreen())),
+              child: Row(
+                children: [
+                  const Icon(Icons.payments_outlined, color: AppColors.gold),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Your money', style: AppText.title),
+                        SizedBox(height: 2),
+                        Text('See what these signals would have made in dollars for your account size and risk, and pick your strategy.',
+                            style: AppText.caption),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: AppColors.text3),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             Row(
               children: [
                 for (final p in _periods)

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/models.dart';
+import '../models/money.dart';
 import 'api.dart';
 
 class RemoteApi extends Api {
@@ -173,6 +174,28 @@ class RemoteApi extends Api {
   @override
   Future<Stats> stats(int days) async =>
       Stats.fromJson(await _req('GET', '/stats', query: {'days': '$days'}));
+
+  @override
+  Future<ResultsData> results({required double account, required double risk, String? strategy, String? pairs}) async =>
+      ResultsData.fromJson(await _req('GET', '/results', query: {
+        'account': '$account',
+        'risk': '$risk',
+        if (strategy != null) 'strategy': strategy,
+        if (pairs != null) 'pairs': pairs,
+      }));
+
+  @override
+  Future<StrategiesData> strategies() async =>
+      StrategiesData.fromJson(await _req('GET', '/strategies'));
+
+  @override
+  Future<AppUser> updatePreferences(
+          {String? strategy, bool setStrategy = false, double? accountSize, double? riskPct}) async =>
+      _user(await _req('PUT', '/me/preferences', body: {
+        if (setStrategy) 'strategy': strategy,
+        if (accountSize != null) 'account_size': accountSize,
+        if (riskPct != null) 'risk_pct': riskPct,
+      }));
 
   @override
   Future<Map<String, bool>> promo() async {
