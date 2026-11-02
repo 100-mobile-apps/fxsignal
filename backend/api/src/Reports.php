@@ -206,10 +206,21 @@ final class Reports
             $metaKey = "report_$period";
             $done = Db::one('SELECT v FROM meta WHERE k = ?', [$metaKey]);
             if ($done && $done['v'] === $key) continue;
-            Db::exec('DELETE FROM meta WHERE k = ?', [$metaKey]);
-            Db::exec('INSERT INTO meta (k, v) VALUES (?, ?)', [$metaKey, $key]);
-            [$row, $signals] = self::window($period, $start);
-            $n = Notify::report($period, $row, $signals, self::summary($nowTs));
+            // Queue the report emails and mark the report as sent in one transaction, so a failure part-way
+            // leaves it unsent (retried next run) instead of marked sent with nothing queued.
+            $pdo = Db::pdo();
+            $pdo->beginTransaction();
+            try {
+                [$row, $signals] = self::window($period, $start);
+                $n = Notify::report($period, $row, $signals, self::summary($nowTs));
+                Db::exec('DELETE FROM meta WHERE k = ?', [$metaKey]);
+                Db::exec('INSERT INTO meta (k, v) VALUES (?, ?)', [$metaKey, $key]);
+                $pdo->commit();
+            } catch (Throwable $e) {
+                $pdo->rollBack();
+                $log[] = "report $period: not sent, will retry ({$e->getMessage()})";
+                continue;
+            }
             $log[] = "report $period {$row['label']}: {$row['wins']}W/{$row['losses']}L {$row['pips']} pips, queued $n emails";
         }
         return $log;
