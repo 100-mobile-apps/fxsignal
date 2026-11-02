@@ -60,7 +60,8 @@ final class Notify
             'tp1' => ["🎯 $pair TP1 hit $pipsTxt", 'Move your stop loss to entry (' . number_format((float) $s['entry'], price_decimals($pair), '.', '') . ') to lock in a risk-free trade.'],
             'tp2' => ["✅ $pair hit TP2 $pipsTxt", "Full target reached on the {$s['direction']} signal."],
             'sl' => ["❌ $pair stopped out $pipsTxt", 'Stop loss was hit. Stick to your risk plan.'],
-            'tp1_close' => ["✅ $pair closed in profit $pipsTxt", 'TP1 was reached; the rest closed at break-even.'],
+            'tp1_close' => ($pips > 0 ? ["✅ $pair closed in profit $pipsTxt", 'TP1 was reached and the trade closed at the time limit above entry.']
+                                      : ["➖ $pair closed at break-even", 'TP1 was reached, then price returned to entry, where the stop had been moved.']),
             default => ["⏱ $pair signal expired $pipsTxt", 'Closed at market price after the time limit.'],
         };
         Fcm::sendToTopic('results_' . topic_key($pair), $title, $body, ['signal_id' => $s['id'], 'type' => $kind]);

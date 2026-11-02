@@ -113,6 +113,8 @@ final class Cron
 
     private static function maybeOpen(string $pair, string $tf, int $tfSec, array $closed, array $all, int $now, ?callable $clock = null): string
     {
+        $publish = config('publish_pairs');
+        if (is_array($publish) && !in_array($pair, $publish, true)) return "$pair: tracking only (not in publish_pairs)";
         if (!TradingPolicy::canPublish($now)) return "$pair: new signals paused for weekend (UTC)";
         $formingT = $all[count($all) - 1]['t'];
         $candleT = $closed[count($closed) - 1]['t'];

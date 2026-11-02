@@ -21,6 +21,8 @@ return [
     // Instruments and timeframe the engine watches.
     // Eight pairs every 20 minutes request roughly 576 series/day before retries or other usage.
     'pairs' => ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF', 'NZD/USD', 'XAU/USD'],
+    // Optional: only these pairs get NEW signals; the rest keep prices and running signals tracked.
+    // 'publish_pairs' => ['XAU/USD'],
     'timeframe' => '1h',
 
     // Signal rules

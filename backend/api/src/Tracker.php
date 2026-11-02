@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Rules (standard for signal services):
  *  - Stop loss is checked before take profit inside the same candle (conservative).
  *  - When TP1 is reached the stop moves to entry (break-even).
- *  - TP2 closes the trade. After TP1, a return to entry closes it as a TP1 win.
+ *  - TP2 closes the trade. After TP1, a return to entry closes it at break-even (0 pips, result 'tp1').
  *  - Trades still open after the expiry time are closed at market.
  * Pure function: same inputs always give the same result.
  */
@@ -35,8 +35,9 @@ final class Tracker
             $stop = $tp1Hit !== null ? $entry : $sl;
             $hitStop = $buy ? $c['l'] <= $stop : $c['h'] >= $stop;
             if ($hitStop) {
+                // After TP1 the stop sits at entry: the trade closes at break-even (0 pips), not at TP1.
                 return self::closed($tp1Hit, $tp1Hit !== null ? 'tp1' : 'sl', $c['t'],
-                    $tp1Hit !== null ? $tp1 : $sl, $tp1Hit !== null ? $pipsTo($tp1) : $pipsTo($sl));
+                    $tp1Hit !== null ? $entry : $sl, $tp1Hit !== null ? 0.0 : $pipsTo($sl));
             }
             if ($tp1Hit === null && ($buy ? $c['h'] >= $tp1 : $c['l'] <= $tp1)) {
                 $tp1Hit = $c['t'];
@@ -49,7 +50,8 @@ final class Tracker
         $lastClose = $last ? (float) $last['c'] : $entry;
         if ($nowTs >= $expiresAt) {
             if ($tp1Hit !== null) {
-                return self::closed($tp1Hit, 'tp1', $expiresAt, $tp1, $pipsTo($tp1));
+                // Expired after TP1 with the stop at entry: closes at the market price.
+                return self::closed($tp1Hit, 'tp1', $expiresAt, $lastClose, $pipsTo($lastClose));
             }
             return self::closed(null, 'expired', $expiresAt, $lastClose, $pipsTo($lastClose));
         }
