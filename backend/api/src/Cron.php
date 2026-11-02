@@ -92,10 +92,11 @@ final class Cron
             $expires = (int) strtotime($s['expires_at'] . ' UTC');
             $r = Tracker::evaluate($s, $candles, $expires, $now);
             $tp1At = $r['tp1_hit_at'] ? now($r['tp1_hit_at']) : null;
+            $lockAt = !empty($r['lock_hit_at']) ? now($r['lock_hit_at']) : null;
             Db::exec(
-                'UPDATE signals SET status = ?, result = ?, tp1_hit_at = ?, closed_at = ?, close_price = ?, pips = ?,
+                'UPDATE signals SET status = ?, result = ?, tp1_hit_at = ?, lock_hit_at = ?, closed_at = ?, close_price = ?, pips = ?,
                  current_price = ?, live_pips = ?, candles = ?, updated_at = ? WHERE id = ?',
-                [$r['status'], $r['result'], $tp1At, $r['closed_at'] ? now($r['closed_at']) : null,
+                [$r['status'], $r['result'], $tp1At, $lockAt, $r['closed_at'] ? now($r['closed_at']) : null,
                  $r['close_price'], $r['pips'], $r['current_price'], $r['live_pips'],
                  self::candlesJson($candles), now($now), $s['id']]
             );
@@ -104,9 +105,15 @@ final class Cron
                 $kind = match ($r['result']) { 'tp2' => 'tp2', 'sl' => 'sl', 'tp1' => 'tp1_close', default => 'expired' };
                 $n = Notify::result($fresh, $kind);
                 $log[] = "$pair: signal #{$s['id']} closed {$r['result']} (" . EmailTemplates::pips((float) $r['pips']) . " pips), $n emails queued";
-            } elseif ($tp1At && !$s['tp1_hit_at']) {
-                $n = Notify::result($fresh, 'tp1');
-                $log[] = "$pair: signal #{$s['id']} TP1 hit, $n emails queued";
+            } else {
+                if ($tp1At && !$s['tp1_hit_at']) {
+                    $n = Notify::result($fresh, 'tp1');
+                    $log[] = "$pair: signal #{$s['id']} TP1 hit, $n emails queued";
+                }
+                if ($lockAt && empty($s['lock_hit_at'])) {
+                    Notify::result($fresh, 'lock');
+                    $log[] = "$pair: signal #{$s['id']} halfway to TP2, lock-at-TP1 alert sent";
+                }
             }
         }
         return $log;

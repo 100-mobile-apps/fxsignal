@@ -54,10 +54,11 @@ final class Notify
     public static function result(array $s, string $kind): int
     {
         $pair = $s['pair'];
-        $pips = (float) ($kind === 'tp1' ? $s['live_pips'] : $s['pips']);
+        $pips = (float) (in_array($kind, ['tp1', 'lock'], true) ? $s['live_pips'] : $s['pips']);
         $pipsTxt = EmailTemplates::pips($pips) . ' pips';
         [$title, $body] = match ($kind) {
             'tp1' => ["🎯 $pair TP1 hit $pipsTxt", 'Your TP1 trade closed in profit. Move the TP2 trade\'s stop loss to entry (' . number_format((float) $s['entry'], price_decimals($pair), '.', '') . ') so it is risk-free.'],
+            'lock' => ["🔒 $pair halfway to TP2 $pipsTxt", 'Move the TP2 trade\'s stop loss to TP1 (' . number_format((float) $s['tp1'], price_decimals($pair), '.', '') . ') to lock in TP1\'s profit.'],
             'tp2' => ["✅ $pair hit TP2 $pipsTxt", "Full target reached on the {$s['direction']} signal."],
             'sl' => ["❌ $pair stopped out $pipsTxt", 'Stop loss was hit. Stick to your risk plan.'],
             'tp1_close' => ["✅ $pair closed in profit $pipsTxt", 'TP1 was banked on half the trade; the TP2 half closed at entry or at the time limit.'],
@@ -65,7 +66,7 @@ final class Notify
         };
         Fcm::sendToTopic('results_' . topic_key($pair), $title, $body, ['signal_id' => $s['id'], 'type' => $kind]);
         // TP1 is push-only to keep email volume inside hosting limits; the final result is emailed.
-        if ($kind === 'tp1') return 0;
+        if ($kind === 'tp1' || $kind === 'lock') return 0;
         $n = 0;
         foreach (self::recipients('email_results', $pair) as $u) {
             $unsub = self::unsubscribeUrl((int) $u['id'], 'email_results');

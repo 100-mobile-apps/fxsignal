@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS signals (
   status VARCHAR(10) NOT NULL DEFAULT 'running',
   result VARCHAR(10) NULL,
   tp1_hit_at DATETIME NULL,
+  lock_hit_at DATETIME NULL,
   closed_at DATETIME NULL,
   close_price DOUBLE NULL,
   pips DOUBLE NULL,

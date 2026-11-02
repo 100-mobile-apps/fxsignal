@@ -19,6 +19,7 @@ final class Signals
             'status' => $s['status'],
             'result' => $s['result'],
             'tp1_hit_at' => iso($s['tp1_hit_at']),
+            'lock_hit_at' => iso($s['lock_hit_at'] ?? null),
             'opened_at' => iso($s['opened_at']),
             'expires_at' => iso($s['expires_at']),
             'closed_at' => iso($s['closed_at']),
