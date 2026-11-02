@@ -43,6 +43,13 @@ final class Auth
                 ],
             ],
             'watchlist' => $u['watchlist'] ? json_decode($u['watchlist'], true) : default_pairs(),
+            'preferences' => [
+                'strategy' => MarketRank::effectiveStrategy($u['strategy'] ?? null),
+                'strategy_chosen' => ($u['strategy'] ?? null) !== null,
+                'account_size' => $u['account_size'] !== null ? (float) $u['account_size'] : 10000.0,
+                'risk_pct' => $u['risk_pct'] !== null ? (float) $u['risk_pct'] : 1.0,
+            ],
+            'default_pairs' => default_pairs(),
         ];
     }
 

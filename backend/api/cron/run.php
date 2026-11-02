@@ -16,5 +16,5 @@ if (!flock($lock, LOCK_EX | LOCK_NB)) {
     exit(0);
 }
 
-$log = Cron::run(time(), fn(string $pair, string $tf) => TwelveData::series($pair, $tf, 300));
+$log = Cron::run(time(), fn(string $pair, string $tf) => TwelveData::series($pair, $tf, 1200));
 echo '[' . gmdate('Y-m-d H:i:s') . "] \n" . implode("\n", $log) . "\n";

@@ -28,27 +28,61 @@ function iso(?string $dt): ?string
     return $dt ? str_replace(' ', 'T', substr($dt, 0, 19)) . 'Z' : null;
 }
 
-/** Markets a user follows until they choose their own (config 'default_pairs', else every pair). */
+/**
+ * Markets a user follows until they choose their own: the best recent markets (see MarketRank) when ranking is on
+ * and enough results exist, otherwise config 'default_pairs', otherwise every pair.
+ */
 function default_pairs(): array
 {
+    static $cache = null;
+    if ($cache !== null) return $cache;
     $all = (array) config('pairs', []);
+    $ranked = config('auto_default_pairs', true) && class_exists('MarketRank') ? MarketRank::top() : [];
+    $ranked = array_values(array_intersect($ranked, $all));
+    if ($ranked) return $cache = $ranked;
     $d = config('default_pairs');
     $d = is_array($d) ? array_values(array_intersect($d, $all)) : [];
-    return $d ?: $all;
+    return $cache = ($d ?: $all);
 }
 
+function is_crypto(string $pair): bool
+{
+    return (bool) preg_match('#^(BTC|ETH)/#', $pair);
+}
+
+/** Price distance of one "pip" (gold 0.1, JPY 0.01, crypto 1 dollar, others 0.0001). */
 function pip_size(string $pair): float
 {
     if (strpos($pair, 'XAU') === 0) return 0.1;
+    if (is_crypto($pair)) return 1.0;
     if (strpos($pair, 'JPY') !== false) return 0.01;
     return 0.0001;
 }
 
 function price_decimals(string $pair): int
 {
-    if (strpos($pair, 'XAU') === 0) return 2;
+    if (strpos($pair, 'XAU') === 0 || is_crypto($pair)) return 2;
     if (strpos($pair, 'JPY') !== false) return 3;
     return 5;
+}
+
+/** Typical round-trip trading cost in pips (FX 1.5, gold 3, BTC 0.05% and ETH 0.07% of price). */
+function spread_pips(string $pair, float $price): float
+{
+    if (strpos($pair, 'XAU') === 0) return 3.0;
+    if (strpos($pair, 'BTC/') === 0) return 0.0005 * $price;
+    if (strpos($pair, 'ETH/') === 0) return 0.0007 * $price;
+    return 1.5;
+}
+
+/** Approximate dollars per pip for a 1.00 lot (used for the lot-size and small-account warnings). */
+function pip_value_per_lot(string $pair, float $price): float
+{
+    if (strpos($pair, 'XAU') === 0) return 10.0;            // 100 oz, $0.10 move
+    if (is_crypto($pair)) return 1.0;                       // 1 coin, $1 move
+    $quote = substr($pair, -3);
+    if ($quote === 'USD') return 10.0;
+    return $price > 0 ? 100000 * pip_size($pair) / $price : 10.0;   // JPY, CAD, CHF ... quote currency to USD (approx.)
 }
 
 /** FCM topic-safe name, e.g. "EUR/USD" -> "EURUSD". */
@@ -61,6 +95,7 @@ require_once __DIR__ . '/Db.php';
 require_once __DIR__ . '/Http.php';
 require_once __DIR__ . '/Jwt.php';
 require_once __DIR__ . '/Engine.php';
+require_once __DIR__ . '/Strategies.php';
 require_once __DIR__ . '/TradingPolicy.php';
 require_once __DIR__ . '/Tracker.php';
 require_once __DIR__ . '/TwelveData.php';
@@ -75,3 +110,6 @@ require_once __DIR__ . '/Cron.php';
 require_once __DIR__ . '/EmailTemplates.php';
 require_once __DIR__ . '/Notify.php';
 require_once __DIR__ . '/Reports.php';
+require_once __DIR__ . '/Perf.php';
+require_once __DIR__ . '/MarketRank.php';
+require_once __DIR__ . '/Results.php';

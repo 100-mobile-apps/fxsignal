@@ -23,6 +23,14 @@ return [
     'pairs' => ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF', 'NZD/USD', 'XAU/USD'],
     // Markets new users follow (watchlist, push and emails) until they choose their own.
     'default_pairs' => ['XAU/USD'],
+    // Best recent markets (last 14 days, after costs) become the default for people who never chose; falls back to default_pairs.
+    'auto_default_pairs' => true,
+    // Markets that are only watched: their signals are recorded silently (never sent) so they can prove themselves first.
+    // Each costs about 24 data requests a day. Eight live pairs use about 576 of the 800 free requests a day.
+    'watch_pairs' => ['EUR/GBP', 'EUR/JPY', 'GBP/JPY', 'AUD/JPY', 'BTC/USD', 'ETH/USD'],
+    // Strategies that run (omit for all). Order of preference before any has 20 live results:
+    // 'strategies' => ['steady', 'adaptive', 'high_reward', 'classic', 'win90'],
+    'strategy_priors' => ['steady', 'adaptive', 'classic', 'high_reward'],
     // Optional: only these pairs get NEW signals; the rest keep prices and running signals tracked.
     // 'publish_pairs' => ['XAU/USD'],
     'timeframe' => '1h',

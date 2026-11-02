@@ -81,10 +81,10 @@ final class Reports
         $end = self::next($period, $start);
         $closed = Db::all(
             "SELECT id, pair, direction, entry, stop_loss, tp1, tp2, result, pips, closed_at FROM signals
-             WHERE status = 'closed' AND closed_at >= ? AND closed_at < ? ORDER BY closed_at",
+             WHERE status = 'closed' AND published = 1 AND closed_at >= ? AND closed_at < ? ORDER BY closed_at",
             [self::utc($start), self::utc($end)]
         );
-        $opened = (int) Db::one('SELECT COUNT(*) AS n FROM signals WHERE opened_at >= ? AND opened_at < ?',
+        $opened = (int) Db::one('SELECT COUNT(*) AS n FROM signals WHERE published = 1 AND opened_at >= ? AND opened_at < ?',
             [self::utc($start), self::utc($end)])['n'];
         $row = self::emptyRow($period, $start);
         $row['opened'] = $opened;
@@ -121,9 +121,9 @@ final class Reports
         $oldest = end($starts);
         $rangeEnd = self::next($period, $starts[0]);
 
-        $closed = Db::all("SELECT id, pair, pips, closed_at FROM signals WHERE status = 'closed' AND closed_at >= ? AND closed_at < ?",
+        $closed = Db::all("SELECT id, pair, pips, closed_at FROM signals WHERE status = 'closed' AND published = 1 AND closed_at >= ? AND closed_at < ?",
             [self::utc($oldest), self::utc($rangeEnd)]);
-        $opened = Db::all('SELECT opened_at FROM signals WHERE opened_at >= ? AND opened_at < ?',
+        $opened = Db::all('SELECT opened_at FROM signals WHERE published = 1 AND opened_at >= ? AND opened_at < ?',
             [self::utc($oldest), self::utc($rangeEnd)]);
 
         $rows = [];
@@ -153,7 +153,7 @@ final class Reports
         }
         $all = Db::one("SELECT COUNT(*) AS closed, SUM(CASE WHEN pips > 0 THEN 1 ELSE 0 END) AS wins,
             SUM(CASE WHEN pips < 0 THEN 1 ELSE 0 END) AS losses, COALESCE(SUM(pips), 0) AS pips, MIN(opened_at) AS since
-            FROM signals WHERE status = 'closed'");
+            FROM signals WHERE status = 'closed' AND published = 1");
         $closedAll = (int) $all['closed'];
         $out['all'] = [
             'closed' => $closedAll,
@@ -163,7 +163,7 @@ final class Reports
             'win_rate' => $closedAll ? round((int) $all['wins'] * 100 / $closedAll, 1) : 0.0,
             'since' => iso($all['since']),
         ];
-        $out['running'] = (int) Db::one("SELECT COUNT(*) AS n FROM signals WHERE status = 'running'")['n'];
+        $out['running'] = (int) Db::one("SELECT COUNT(*) AS n FROM signals WHERE status = 'running' AND published = 1")['n'];
         return $out;
     }
 

@@ -23,10 +23,14 @@ final class Cron
         $log = [];
         $tf = (string) config('timeframe', '1h');
         $tfSec = self::tfSeconds($tf);
-        $pairs = config('pairs');
+        $main = (array) config('pairs');
+        // Markets that are only being watched (no alerts sent) are checked once an hour to save data requests.
+        $watch = $now % 3600 < 1200 ? array_values(array_diff((array) config('watch_pairs', []), $main)) : [];
+        $pairs = array_merge($main, $watch);
         $rpm = max(1, (int) config('requests_per_minute', 8));
 
         foreach ($pairs as $i => $pair) {
+            $isWatch = !in_array($pair, $main, true);
             if ($throttle && $i > 0) usleep((int) (60 / $rpm * 1e6));
             try {
                 $candles = $fetch($pair, $tf);
@@ -42,14 +46,21 @@ final class Cron
                 $log[] = "$pair: invalid or future-dated market candles (tracking skipped)";
                 continue;
             }
-            self::updatePrice($pair, $candles, $tfSec, $now);
+            if (!$isWatch) self::updatePrice($pair, $candles, $tfSec, $now);
             $log = array_merge($log, self::updateRunning($pair, $candles, $now));
 
             // Only fully closed candles are used for new signals (no repainting).
             $closed = $candles;
             $lastT = $candles[count($candles) - 1]['t'];
             if ($lastT + $tfSec > $now) array_pop($closed);
-            $log[] = self::maybeOpen($pair, $tf, $tfSec, $closed, $candles, (int) $clock(), $clock);
+            foreach (Strategies::keys() as $strategy) {
+                $log[] = self::maybeOpen($pair, $strategy, $isWatch, $tf, $tfSec, $closed, $candles, (int) $clock(), $clock);
+            }
+        }
+
+        $rank = MarketRank::refresh($now);
+        foreach ((array) ($rank['watching'] ?? []) as $w) {
+            if ($w['status'] === 'proven') $log[] = "watch: {$w['pair']} is proven ({$w['trades']} trades) - add it to 'pairs' to send alerts";
         }
 
         $log = array_merge($log, Reports::sendScheduled($now));
@@ -101,10 +112,11 @@ final class Cron
                  self::candlesJson($candles), now($now), $s['id']]
             );
             $fresh = Db::one('SELECT * FROM signals WHERE id = ?', [$s['id']]);
+            if ((int) $fresh['published'] !== 1) continue;      // watch-only markets never send alerts
             if ($r['status'] === 'closed') {
                 $kind = match ($r['result']) { 'tp2' => 'tp2', 'sl' => 'sl', 'tp1' => 'tp1_close', default => 'expired' };
                 $n = Notify::result($fresh, $kind);
-                $log[] = "$pair: signal #{$s['id']} closed {$r['result']} (" . EmailTemplates::pips((float) $r['pips']) . " pips), $n emails queued";
+                $log[] = "$pair: signal #{$s['id']} ({$s['strategy']}) closed {$r['result']} (" . EmailTemplates::pips((float) $r['pips']) . " pips), $n emails queued";
             } else {
                 if ($tp1At && !$s['tp1_hit_at']) {
                     $n = Notify::result($fresh, 'tp1');
@@ -119,60 +131,63 @@ final class Cron
         return $log;
     }
 
-    private static function maybeOpen(string $pair, string $tf, int $tfSec, array $closed, array $all, int $now, ?callable $clock = null): string
+    private static function maybeOpen(string $pair, string $strategy, bool $watchOnly, string $tf, int $tfSec, array $closed, array $all, int $now, ?callable $clock = null): string
     {
+        $tag = $strategy === 'classic' ? $pair : "$pair/$strategy";
         $publish = config('publish_pairs');
-        if (is_array($publish) && !in_array($pair, $publish, true)) return "$pair: tracking only (not in publish_pairs)";
-        if (!TradingPolicy::canPublish($now)) return "$pair: new signals paused for weekend (UTC)";
+        $published = !$watchOnly && !(is_array($publish) && !in_array($pair, $publish, true)) ? 1 : 0;
+        if ($published === 0 && !$watchOnly) return "$tag: tracking only (not in publish_pairs)";
+        if (!TradingPolicy::canPublish($now)) return "$tag: new signals paused for weekend (UTC)";
         $formingT = $all[count($all) - 1]['t'];
         $candleT = $closed[count($closed) - 1]['t'];
         if ($formingT <= $candleT || !TradingPolicy::freshFormingQuote($formingT, $tfSec, $now)) {
-            return "$pair: no fresh forming-candle quote for entry";
+            return "$tag: no fresh forming-candle quote for entry";
         }
-        if (Db::one("SELECT id FROM signals WHERE pair = ? AND status = 'running'", [$pair])) {
-            return "$pair: signal already running";
+        if (Db::one("SELECT id FROM signals WHERE pair = ? AND strategy = ? AND status = 'running'", [$pair, $strategy])) {
+            return "$tag: signal already running";
         }
         $cooldown = (int) config('cooldown_hours', 4) * 3600;
-        $recent = Db::one("SELECT id FROM signals WHERE pair = ? AND status = 'closed' AND closed_at > ?", [$pair, now($now - $cooldown)]);
-        if ($recent) return "$pair: cooling down after last signal";
+        $recent = Db::one("SELECT id FROM signals WHERE pair = ? AND strategy = ? AND status = 'closed' AND closed_at > ?", [$pair, $strategy, now($now - $cooldown)]);
+        if ($recent) return "$tag: cooling down after last signal";
 
-        if (Db::one('SELECT id FROM signals WHERE pair = ? AND candle_t >= ?', [$pair, $candleT])) {
-            return "$pair: already evaluated this candle";
+        if (Db::one('SELECT id FROM signals WHERE pair = ? AND strategy = ? AND candle_t >= ?', [$pair, $strategy, $candleT])) {
+            return "$tag: already evaluated this candle";
         }
         // Stale data guard (e.g. weekend): skip if the last closed candle is old.
-        if ($now - ($candleT + $tfSec) > 3 * $tfSec) return "$pair: market closed / stale data";
+        if ($now - ($candleT + $tfSec) > 3 * $tfSec) return "$tag: market closed / stale data";
 
         $min = (int) config('min_confidence', 65);
-        $a = Engine::analyze($closed, $min);
-        if (!$a || $a['direction'] === 'WAIT' || $a['confidence'] < $min || $a['sl'] === null) {
-            return "$pair: no setup" . ($a ? " ({$a['direction']} {$a['confidence']}%)" : '');
+        $a = Strategies::analyze($strategy, $closed, $min);
+        if (!$a || $a['direction'] === 'WAIT' || $a['sl'] === null || ($strategy === 'classic' && $a['confidence'] < $min)) {
+            return "$tag: no setup" . ($a ? " ({$a['direction']} {$a['confidence']}%)" : '');
         }
 
-        // Entry = latest price (the forming candle), levels keep the ATR distances.
+        // Entry = latest price (the forming candle), levels keep the same distances.
         // Tracking starts after the candle the entry was taken in, so price
         // action from before the signal can never trigger TP/SL.
         $entry = $all[count($all) - 1]['c'];
         $maxDrift = (float) config('max_entry_drift_atr', 0.5);
         if (!TradingPolicy::entryWithinAtr((float) $entry, (float) $a['entry'], (float) $a['atr'], $maxDrift)) {
-            return "$pair: setup passed but entry moved too far from confirmed close";
+            return "$tag: setup passed but entry moved too far from confirmed close";
         }
         $publicationTime = $clock ? (int) $clock() : $now;
-        if (!TradingPolicy::canPublish($publicationTime)) return "$pair: new signals paused for weekend (UTC)";
+        if (!TradingPolicy::canPublish($publicationTime)) return "$tag: new signals paused for weekend (UTC)";
         if (!TradingPolicy::freshFormingQuote($formingT, $tfSec, $publicationTime)) {
-            return "$pair: quote became stale before publication";
+            return "$tag: quote became stale before publication";
         }
         $trackFromT = $all[count($all) - 1]['t'];
         $shift = $entry - $a['entry'];
-        $expiresAt = $publicationTime + (int) config('signal_expiry_hours', 72) * 3600;
+        $expiresAt = $publicationTime + Strategies::expiryHours($strategy) * 3600;
         $id = Db::insert(
-            'INSERT INTO signals (pair, timeframe, direction, entry, stop_loss, tp1, tp2, confidence, reasons, candles, candle_t,
+            'INSERT INTO signals (pair, strategy, published, timeframe, direction, entry, stop_loss, tp1, tp2, confidence, reasons, candles, candle_t,
               status, current_price, live_pips, opened_at, expires_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [$pair, $tf, $a['direction'], $entry, $a['sl'] + $shift, $a['tp1'] + $shift, $a['tp2'] + $shift,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [$pair, $strategy, $published, $tf, $a['direction'], $entry, $a['sl'] + $shift, $a['tp1'] + $shift, $a['tp2'] + $shift,
              $a['confidence'], json_encode($a['reasons']), self::candlesJson($all), $trackFromT,
               'running', $entry, 0.0, now($publicationTime), now($expiresAt), now($publicationTime)]
         );
+        if (!$published) return "$tag: WATCH {$a['direction']} #$id (not sent to users)";
         $n = Notify::newSignal(Db::one('SELECT * FROM signals WHERE id = ?', [$id]));
-        return "$pair: NEW {$a['direction']} #$id ({$a['confidence']}%), $n emails queued";
+        return "$tag: NEW {$a['direction']} #$id ({$a['confidence']}%), $n emails queued";
     }
 }

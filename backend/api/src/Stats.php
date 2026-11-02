@@ -77,13 +77,13 @@ final class Stats
         Auth::user();
         $days = (int) ($_GET['days'] ?? 30);
         $params = [];
-        $where = "status = 'closed'";
+        $where = "status = 'closed' AND published = 1";
         if ($days > 0) {
             $where .= ' AND closed_at >= ?';
             $params[] = now(time() - $days * 86400);
         }
         $closed = Db::all("SELECT pair, pips, closed_at FROM signals WHERE $where", $params);
-        $running = (int) Db::one("SELECT COUNT(*) AS n FROM signals WHERE status = 'running'")['n'];
+        $running = (int) Db::one("SELECT COUNT(*) AS n FROM signals WHERE status = 'running' AND published = 1")['n'];
         $stats = self::compute($closed, $running);
         $stats['days'] = $days;
         Http::send($stats);

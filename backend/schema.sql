@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS users (
   email_weekly TINYINT(1) NOT NULL DEFAULT 1,
   email_monthly TINYINT(1) NOT NULL DEFAULT 1,
   watchlist TEXT NULL,
+  strategy VARCHAR(16) NULL,
+  account_size DOUBLE NULL,
+  risk_pct DOUBLE NULL,
   created_at DATETIME NOT NULL,
   last_login_at DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -37,6 +40,8 @@ CREATE TABLE IF NOT EXISTS password_resets (
 CREATE TABLE IF NOT EXISTS signals (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   pair VARCHAR(10) NOT NULL,
+  strategy VARCHAR(16) NOT NULL DEFAULT 'classic',
+  published TINYINT(1) NOT NULL DEFAULT 1,
   timeframe VARCHAR(10) NOT NULL,
   direction VARCHAR(4) NOT NULL,
   entry DOUBLE NOT NULL,

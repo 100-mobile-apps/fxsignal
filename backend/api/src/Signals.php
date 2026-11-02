@@ -8,6 +8,8 @@ final class Signals
         $out = [
             'id' => (int) $s['id'],
             'pair' => $s['pair'],
+            'strategy' => $s['strategy'] ?? 'classic',
+            'strategy_name' => Strategies::name($s['strategy'] ?? 'classic'),
             'timeframe' => $s['timeframe'],
             'direction' => $s['direction'],
             'entry' => (float) $s['entry'],
@@ -29,6 +31,12 @@ final class Signals
             'live_pips' => $s['live_pips'] !== null ? (float) $s['live_pips'] : null,
             'updated_at' => iso($s['updated_at']),
         ];
+        $pip = pip_size($s['pair']);
+        $out['stop_pips'] = round(abs((float) $s['entry'] - (float) $s['stop_loss']) / $pip, 1);
+        $out['tp1_pips'] = round(abs((float) $s['tp1'] - (float) $s['entry']) / $pip, 1);
+        $out['tp2_pips'] = round(abs((float) $s['tp2'] - (float) $s['entry']) / $pip, 1);
+        $out['pip_value_per_lot'] = round(pip_value_per_lot($s['pair'], (float) $s['entry']), 4);
+        $out['cost_pips'] = round(spread_pips($s['pair'], (float) $s['entry']), 2);
         if ($withCandles) {
             $out['candles'] = json_decode($s['candles'] ?: '[]', true);
         }
@@ -42,7 +50,7 @@ final class Signals
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $per = 20;
         $params = [$status];
-        $where = 'status = ?';
+        $where = 'status = ? AND published = 1';
         // Optional closed-at window for reports: ?from=2026-09-01T00:00:00Z&to=...
         foreach (['from' => '>=', 'to' => '<'] as $k => $op) {
             if (!empty($_GET[$k]) && ($ts = strtotime((string) $_GET[$k])) !== false) {
