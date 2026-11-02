@@ -296,3 +296,12 @@ class StrategiesData {
         ((j['best_markets'] as List?) ?? const []).cast<String>(),
       );
 }
+
+/// Personal read-only key the MetaTrader bot uses to fetch signals.
+class BotKey {
+  final String key, url;
+  const BotKey(this.key, this.url);
+
+  factory BotKey.fromJson(Map<String, dynamic> j) =>
+      BotKey(j['key'] as String? ?? '', j['url'] as String? ?? '');
+}

@@ -50,6 +50,10 @@ abstract class Api {
   Future<AppUser> updatePreferences({String? strategy, bool setStrategy = false, double? accountSize, double? riskPct}) async =>
       throw const ApiException('Saving preferences needs the live server.');
 
+  /// The user's personal key for the MetaTrader bot. [rotate] replaces it with a new one.
+  Future<BotKey> botKey({bool rotate = false}) async =>
+      throw const ApiException('The auto-trade bot needs the live server.');
+
   /// Which developer links to show (server-controlled). Keys: coffee, whatsapp, hire.
   Future<Map<String, bool>> promo();
 }

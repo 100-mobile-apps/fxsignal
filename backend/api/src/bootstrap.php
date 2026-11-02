@@ -113,3 +113,4 @@ require_once __DIR__ . '/Reports.php';
 require_once __DIR__ . '/Perf.php';
 require_once __DIR__ . '/MarketRank.php';
 require_once __DIR__ . '/Results.php';
+require_once __DIR__ . '/Ea.php';

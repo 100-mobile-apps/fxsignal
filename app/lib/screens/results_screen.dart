@@ -9,6 +9,7 @@ import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/signal_card.dart';
 import 'legal_screen.dart';
+import 'bot_screen.dart';
 import 'money_screen.dart';
 import 'reports_view.dart';
 import 'signals_screen.dart';
@@ -119,6 +120,27 @@ class _Overview extends StatelessWidget {
                     ),
                   ),
                   const Icon(Icons.chevron_right_rounded, color: AppColors.text3),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            GlassCard(
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BotScreen())),
+              child: const Row(
+                children: [
+                  Icon(Icons.smart_toy_outlined, color: AppColors.gold),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Auto-trade bot', style: AppText.title),
+                        SizedBox(height: 2),
+                        Text('Let a free MetaTrader 5 robot place every signal for you, so you never miss one.', style: AppText.caption),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.text3),
                 ],
               ),
             ),

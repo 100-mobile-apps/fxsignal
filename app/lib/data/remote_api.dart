@@ -198,6 +198,10 @@ class RemoteApi extends Api {
       }));
 
   @override
+  Future<BotKey> botKey({bool rotate = false}) async =>
+      BotKey.fromJson(await _req(rotate ? 'POST' : 'GET', '/me/ea-key'));
+
+  @override
   Future<Map<String, bool>> promo() async {
     final d = await _req('GET', '/health');
     final p = (d['promo'] as Map?)?.cast<String, dynamic>() ?? const {};

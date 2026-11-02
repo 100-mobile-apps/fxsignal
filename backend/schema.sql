@@ -20,8 +20,10 @@ CREATE TABLE IF NOT EXISTS users (
   strategy VARCHAR(16) NULL,
   account_size DOUBLE NULL,
   risk_pct DOUBLE NULL,
+  ea_key CHAR(32) NULL,
   created_at DATETIME NOT NULL,
-  last_login_at DATETIME NULL
+  last_login_at DATETIME NULL,
+  INDEX (ea_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- One-time 6-digit codes for email verification and password reset
