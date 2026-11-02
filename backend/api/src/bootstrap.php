@@ -28,6 +28,15 @@ function iso(?string $dt): ?string
     return $dt ? str_replace(' ', 'T', substr($dt, 0, 19)) . 'Z' : null;
 }
 
+/** Markets a user follows until they choose their own (config 'default_pairs', else every pair). */
+function default_pairs(): array
+{
+    $all = (array) config('pairs', []);
+    $d = config('default_pairs');
+    $d = is_array($d) ? array_values(array_intersect($d, $all)) : [];
+    return $d ?: $all;
+}
+
 function pip_size(string $pair): float
 {
     if (strpos($pair, 'XAU') === 0) return 0.1;

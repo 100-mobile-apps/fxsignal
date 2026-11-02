@@ -33,7 +33,7 @@ final class Auth
                 'signals' => (bool) $u['notify_signals'],
                 'results' => (bool) $u['notify_results'],
                 'reports' => (bool) $u['notify_reports'],
-                'pairs' => $u['notify_pairs'] ? json_decode($u['notify_pairs'], true) : null,
+                'pairs' => $u['notify_pairs'] ? json_decode($u['notify_pairs'], true) : default_pairs(),
                 'email' => [
                     'signals' => (bool) $u['email_signals'],
                     'results' => (bool) $u['email_results'],
@@ -42,7 +42,7 @@ final class Auth
                     'monthly' => (bool) $u['email_monthly'],
                 ],
             ],
-            'watchlist' => $u['watchlist'] ? json_decode($u['watchlist'], true) : config('pairs'),
+            'watchlist' => $u['watchlist'] ? json_decode($u['watchlist'], true) : default_pairs(),
         ];
     }
 

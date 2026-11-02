@@ -12,8 +12,8 @@ final class Notify
         $rows = Db::all("SELECT id, name, email, notify_pairs FROM users WHERE email_verified_at IS NOT NULL AND $column = 1");
         if ($pair === null) return $rows;
         return array_values(array_filter($rows, function ($u) use ($pair) {
-            if (!$u['notify_pairs']) return true;
-            $pairs = json_decode($u['notify_pairs'], true);
+            // Users who never chose markets get the default markets (gold unless configured otherwise).
+            $pairs = $u['notify_pairs'] ? json_decode($u['notify_pairs'], true) : default_pairs();
             return !is_array($pairs) || in_array($pair, $pairs, true);
         }));
     }
