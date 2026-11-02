@@ -89,17 +89,21 @@ HTML;
     public static function code(string $name, string $code, string $purpose): array
     {
         $app = (string) config('app_name', 'FX Signals');
-        $verify = $purpose === 'verify';
-        $subject = $verify ? "Verify your email for $app" : "$app password reset code";
-        $lead = $verify
-            ? 'Enter this code in the app to confirm your email address and turn on email alerts.'
-            : 'Enter this code in the app to choose a new password.';
+        $remind = $purpose === 'remind';
+        $verify = $purpose === 'verify' || $remind;
+        $subject = $remind ? "You're missing your $app alerts: verify your email" : ($verify ? "Verify your email for $app" : "$app password reset code");
+        $lead = $remind
+            ? 'Your email isn\'t verified yet, so signal and result alerts can\'t reach you. Open the app, go to verify your email, and enter this code.'
+            : ($verify
+                ? 'Enter this code in the app to confirm your email address and turn on email alerts.'
+                : 'Enter this code in the app to choose a new password.');
+        $expires = $remind ? '48 hours' : '15 minutes';
         $inner = '<div style="font-size:20px;font-weight:700;color:#F4F6FB">Hi ' . self::e($name) . ',</div>'
             . '<p style="font-size:15px;line-height:1.6;color:#AEB6C8;margin:10px 0 0">' . $lead . '</p>'
             . '<div style="margin:22px 0 6px;padding:18px;border-radius:14px;background:#0B1019;border:1px solid #2A3650;text-align:center;font:800 34px Consolas,Menlo,monospace;letter-spacing:10px;color:#F5B942">' . $code . '</div>'
-            . '<p style="font-size:13px;color:#6B7690;margin:10px 0 0">The code expires in 15 minutes. If you didn\'t request it, you can ignore this email.</p>';
+            . '<p style="font-size:13px;color:#6B7690;margin:10px 0 0">The code expires in ' . $expires . '. If you didn\'t request it, you can ignore this email.</p>';
         $html = self::layout("Your code is $code", $inner, null, 'You received this because a code was requested for your account.');
-        $text = "Hi $name,\n\n$lead\n\nYour code: $code\n\nIt expires in 15 minutes.\n\n— $app";
+        $text = "Hi $name,\n\n$lead\n\nYour code: $code\n\nIt expires in $expires.\n\n— $app";
         return [$subject, $html, $text];
     }
 

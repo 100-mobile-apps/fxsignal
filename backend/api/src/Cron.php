@@ -53,6 +53,7 @@ final class Cron
         }
 
         $log = array_merge($log, Reports::sendScheduled($now));
+        $log = array_merge($log, Auth::sendVerifyReminders($now));
         [$sent, $failed] = Mailer::processQueue();
         if ($sent || $failed) $log[] = "emails: $sent sent" . ($failed ? ", $failed failed (will retry)" : '');
 

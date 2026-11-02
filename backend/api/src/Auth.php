@@ -99,15 +99,49 @@ final class Auth
     /** Creates a 6-digit code (verify or reset), emails it immediately. */
     public static function sendCode(array $user, string $purpose): bool
     {
+        $code = self::newCode($user, $purpose, 900);
+        [$subject, $html, $text] = EmailTemplates::code($user['name'], $code, $purpose);
+        return Mailer::sendNow($user['email'], $subject, $html, $text);
+    }
+
+    private static function newCode(array $user, string $purpose, int $ttl): string
+    {
         $code = (string) random_int(100000, 999999);
         Db::exec('UPDATE password_resets SET used_at = ? WHERE user_id = ? AND purpose = ? AND used_at IS NULL',
             [now(), $user['id'], $purpose]);
         Db::insert(
             'INSERT INTO password_resets (user_id, purpose, code_hash, attempts, expires_at, created_at) VALUES (?, ?, ?, 0, ?, ?)',
-            [$user['id'], $purpose, password_hash($code, PASSWORD_DEFAULT), now(time() + 900), now()]
+            [$user['id'], $purpose, password_hash($code, PASSWORD_DEFAULT), now(time() + $ttl), now()]
         );
-        [$subject, $html, $text] = EmailTemplates::code($user['name'], $code, $purpose);
-        return Mailer::sendNow($user['email'], $subject, $html, $text);
+        return $code;
+    }
+
+    /**
+     * Reminds unverified users to verify (so they get email alerts): 1, 3 and 7 days after sign-up, then stops.
+     * Each reminder carries a fresh code valid for 48 hours and goes through the mail queue.
+     */
+    public static function sendVerifyReminders(int $nowTs, int $max = 30): array
+    {
+        $due = [1 => 86400, 2 => 3 * 86400, 3 => 7 * 86400];   // codes already sent => age since sign-up for the next one
+        $rows = Db::all(
+            "SELECT u.*, COUNT(p.id) AS sent, MAX(p.created_at) AS last_sent
+             FROM users u LEFT JOIN password_resets p ON p.user_id = u.id AND p.purpose = 'verify'
+             WHERE u.email_verified_at IS NULL GROUP BY u.id ORDER BY u.created_at"
+        );
+        $n = 0;
+        foreach ($rows as $u) {
+            if ($n >= $max) break;
+            $sent = max(1, (int) $u['sent']);              // the sign-up email counts as the first
+            if (!isset($due[$sent])) continue;             // 3 reminders already sent
+            $age = $nowTs - (int) strtotime($u['created_at'] . ' UTC');
+            $since = $u['last_sent'] ? $nowTs - (int) strtotime($u['last_sent'] . ' UTC') : PHP_INT_MAX;
+            if ($age < $due[$sent] || $since < 86400) continue;
+            $code = self::newCode($u, 'verify', 48 * 3600);
+            [$subject, $html, $text] = EmailTemplates::code($u['name'], $code, 'remind');
+            Mailer::queue((int) $u['id'], $u['email'], $subject, $html, $text);
+            $n++;
+        }
+        return $n ? ["verify reminders: $n queued"] : [];
     }
 
     /** Checks a code; throws on failure. */
