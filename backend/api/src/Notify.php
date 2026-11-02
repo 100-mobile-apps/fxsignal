@@ -38,7 +38,7 @@ final class Notify
         $emoji = $s['direction'] === 'BUY' ? '🟢' : '🔴';
         Fcm::sendToTopic('signals_' . topic_key($pair),
             "$emoji {$s['direction']} $pair @ " . $f($s['entry']),
-            'SL ' . $f($s['stop_loss']) . ' · TP1 ' . $f($s['tp1']) . ' · TP2 ' . $f($s['tp2']) . " · {$s['confidence']}% strength",
+            'SL ' . $f($s['stop_loss']) . ' · TP1 ' . $f($s['tp1']) . ' · TP2 ' . $f($s['tp2']) . " · Tip: split into 2 trades (TP1 & TP2)",
             ['signal_id' => $s['id'], 'type' => 'signal']);
         $n = 0;
         foreach (self::recipients('email_signals', $pair) as $u) {
@@ -57,11 +57,10 @@ final class Notify
         $pips = (float) ($kind === 'tp1' ? $s['live_pips'] : $s['pips']);
         $pipsTxt = EmailTemplates::pips($pips) . ' pips';
         [$title, $body] = match ($kind) {
-            'tp1' => ["🎯 $pair TP1 hit $pipsTxt", 'Move your stop loss to entry (' . number_format((float) $s['entry'], price_decimals($pair), '.', '') . ') to lock in a risk-free trade.'],
+            'tp1' => ["🎯 $pair TP1 hit $pipsTxt", 'Your TP1 trade closed in profit. Move the TP2 trade\'s stop loss to entry (' . number_format((float) $s['entry'], price_decimals($pair), '.', '') . ') so it is risk-free.'],
             'tp2' => ["✅ $pair hit TP2 $pipsTxt", "Full target reached on the {$s['direction']} signal."],
             'sl' => ["❌ $pair stopped out $pipsTxt", 'Stop loss was hit. Stick to your risk plan.'],
-            'tp1_close' => ($pips > 0 ? ["✅ $pair closed in profit $pipsTxt", 'TP1 was reached and the trade closed at the time limit above entry.']
-                                      : ["➖ $pair closed at break-even", 'TP1 was reached, then price returned to entry, where the stop had been moved.']),
+            'tp1_close' => ["✅ $pair closed in profit $pipsTxt", 'TP1 was banked on half the trade; the TP2 half closed at entry or at the time limit.'],
             default => ["⏱ $pair signal expired $pipsTxt", 'Closed at market price after the time limit.'],
         };
         Fcm::sendToTopic('results_' . topic_key($pair), $title, $body, ['signal_id' => $s['id'], 'type' => $kind]);

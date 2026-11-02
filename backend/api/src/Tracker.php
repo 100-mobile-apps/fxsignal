@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Rules (standard for signal services):
  *  - Stop loss is checked before take profit inside the same candle (conservative).
  *  - When TP1 is reached the stop moves to entry (break-even).
- *  - TP2 closes the trade. After TP1, a return to entry closes it at break-even (0 pips, result 'tp1').
+ *  - Results assume two half positions (TP1 and TP2). TP2 = half TP1 + half TP2; TP1 then entry = half TP1.
  *  - Trades still open after the expiry time are closed at market.
  * Pure function: same inputs always give the same result.
  */
@@ -25,6 +25,10 @@ final class Tracker
 
         $pipsTo = fn(float $p) => round(($p - $entry) * $dir / $pip, 1);
 
+        // Pips are counted the way a follower trades it: two half positions, one closing at TP1 and one aiming
+        // for TP2; once TP1 is reached the remaining half's stop moves to entry.
+        $half = fn(float $rest) => round(($pipsTo($tp1) + $pipsTo($rest)) / 2, 1);
+
         $tp1Hit = null; // always replayed from the open, so results are deterministic
         $last = null;
 
@@ -35,23 +39,23 @@ final class Tracker
             $stop = $tp1Hit !== null ? $entry : $sl;
             $hitStop = $buy ? $c['l'] <= $stop : $c['h'] >= $stop;
             if ($hitStop) {
-                // After TP1 the stop sits at entry: the trade closes at break-even (0 pips), not at TP1.
+                // Before TP1: both halves stopped. After TP1: half banked at TP1, the other half out at entry.
                 return self::closed($tp1Hit, $tp1Hit !== null ? 'tp1' : 'sl', $c['t'],
-                    $tp1Hit !== null ? $entry : $sl, $tp1Hit !== null ? 0.0 : $pipsTo($sl));
+                    $tp1Hit !== null ? $entry : $sl, $tp1Hit !== null ? $half($entry) : $pipsTo($sl));
             }
             if ($tp1Hit === null && ($buy ? $c['h'] >= $tp1 : $c['l'] <= $tp1)) {
                 $tp1Hit = $c['t'];
             }
             if ($buy ? $c['h'] >= $tp2 : $c['l'] <= $tp2) {
-                return self::closed($tp1Hit ?? $c['t'], 'tp2', $c['t'], $tp2, $pipsTo($tp2));
+                return self::closed($tp1Hit ?? $c['t'], 'tp2', $c['t'], $tp2, $half($tp2));
             }
         }
 
         $lastClose = $last ? (float) $last['c'] : $entry;
         if ($nowTs >= $expiresAt) {
             if ($tp1Hit !== null) {
-                // Expired after TP1 with the stop at entry: closes at the market price.
-                return self::closed($tp1Hit, 'tp1', $expiresAt, $lastClose, $pipsTo($lastClose));
+                // Expired after TP1: half banked at TP1, the other half closed at the market price.
+                return self::closed($tp1Hit, 'tp1', $expiresAt, $lastClose, $half($lastClose));
             }
             return self::closed(null, 'expired', $expiresAt, $lastClose, $pipsTo($lastClose));
         }
@@ -64,7 +68,7 @@ final class Tracker
             'close_price' => null,
             'pips' => null,
             'current_price' => $lastClose,
-            'live_pips' => $pipsTo($lastClose),
+            'live_pips' => $tp1Hit !== null ? $half($lastClose) : $pipsTo($lastClose),
         ];
     }
 

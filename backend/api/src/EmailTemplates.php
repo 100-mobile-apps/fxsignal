@@ -124,7 +124,7 @@ HTML;
             . '<div style="margin-top:6px;font-size:13px;color:#8A93A8">Strength ' . (int) $s['confidence'] . '% · Published ' . gmdate('M j, H:i', strtotime($s['opened_at'] . ' UTC')) . ' UTC</div>'
             . self::levelsTable($s)
             . ($reasonHtml ? '<div style="margin-top:18px;font-size:14px;font-weight:700;color:#F4F6FB">Why this signal</div>' . $reasonHtml : '')
-            . '<p style="margin:18px 0 0;font-size:13px;line-height:1.55;color:#8A93A8">After TP1 is reached, move your stop loss to entry. Risk 1–2% of your account at most.</p>'
+            . '<p style="margin:18px 0 0;font-size:13px;line-height:1.55;color:#8A93A8">Tip: split your size into two trades, one with TP1 and one with TP2. When TP1 closes, move the other trade\'s stop loss to entry. Risk 1–2% of your account in total.</p>'
             . self::button('Open the app for the live chart');
         $text = "New signal: {$s['direction']} $pair\nEntry: " . self::fmt($pair, $s['entry']) . "\nStop loss: " . self::fmt($pair, $s['stop_loss'])
             . "\nTP1: " . self::fmt($pair, $s['tp1']) . "\nTP2: " . self::fmt($pair, $s['tp2']) . "\nStrength: {$s['confidence']}%\n\n"
@@ -144,7 +144,7 @@ HTML;
             'tp2' => ["$pair hit TP2", 'Full target reached.'],
             'sl' => ["$pair stopped out", 'The stop loss was hit. Losses are part of any strategy; keep your risk per trade small.'],
             default => [$win ? "$pair closed in profit" : "$pair closed", $s['result'] === 'tp1'
-                ? 'TP1 was reached and the rest closed at break-even.'
+                ? 'TP1 was banked on half the trade and the TP2 half closed at entry.'
                 : 'The signal reached its time limit and closed at the market price.'],
         };
         $icon = $kind === 'sl' ? '✕' : ($win ? '✓' : '•');
