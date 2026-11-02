@@ -41,7 +41,7 @@ final class MarketRank
     {
         $b = self::load()['best_strategy'] ?? null;
         if (is_string($b) && Strategies::valid($b) && in_array($b, Strategies::keys(), true)) return $b;
-        $prior = (array) config('strategy_priors', ['steady', 'adaptive', 'classic', 'high_reward']);
+        $prior = (array) config('strategy_priors', ['classic', 'steady', 'adaptive', 'high_reward']);
         foreach ($prior as $k) if (Strategies::valid($k) && !Strategies::INFO[$k]['optin'] && in_array($k, Strategies::keys(), true)) return $k;
         return 'classic';
     }
