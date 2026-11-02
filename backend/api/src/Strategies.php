@@ -11,6 +11,16 @@ declare(strict_types=1);
  */
 final class Strategies
 {
+    private static ?string $scope = null;
+
+    /** Which strategy the lists, stats and reports describe (the viewer's own, else the platform default). */
+    public static function setScope(?string $k): void { self::$scope = ($k !== null && self::valid($k)) ? $k : null; }
+
+    public static function scope(): string { return self::$scope ?? MarketRank::effectiveStrategy(null); }
+
+    /** SQL fragment, safe to inline: the key is validated against the known list. */
+    public static function scopeSql(): string { return " AND strategy = '" . self::scope() . "'"; }
+
     /** key => [name, blurb, expiry hours, min 1h candles, risky opt-in] */
     public const INFO = [
         'steady' => [

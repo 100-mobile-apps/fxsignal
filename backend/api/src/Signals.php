@@ -45,12 +45,12 @@ final class Signals
 
     public static function list(): void
     {
-        Auth::user();
+        $u = Auth::user();
         $status = ($_GET['status'] ?? 'running') === 'closed' ? 'closed' : 'running';
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $per = 20;
-        $params = [$status];
-        $where = 'status = ? AND published = 1';
+        $params = [$status, MarketRank::effectiveStrategy($u['strategy'] ?? null)];
+        $where = 'status = ? AND published = 1 AND strategy = ?';
         // Optional closed-at window for reports: ?from=2026-09-01T00:00:00Z&to=...
         foreach (['from' => '>=', 'to' => '<'] as $k => $op) {
             if (!empty($_GET[$k]) && ($ts = strtotime((string) $_GET[$k])) !== false) {
