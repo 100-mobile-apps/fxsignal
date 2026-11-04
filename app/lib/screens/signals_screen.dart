@@ -5,6 +5,7 @@ import '../core/format.dart';
 import '../core/theme.dart';
 import '../state/data_stores.dart';
 import '../state/session_store.dart';
+import '../widgets/alert_banner.dart';
 import '../widgets/common.dart';
 import '../widgets/signal_card.dart';
 import 'signal_detail_screen.dart';
@@ -92,6 +93,7 @@ class _SignalsScreenState extends State<SignalsScreen> {
                 ),
                 const SizedBox(height: 18),
                 const DemoBanner(),
+                const AlertBanner(),
                 _PerformanceCard(
                   winRate: stats?.winRate,
                   pips: stats?.totalPips,
