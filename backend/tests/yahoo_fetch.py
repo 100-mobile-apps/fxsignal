@@ -2,7 +2,7 @@
 
 No API key needed. Gold uses COMEX gold futures (GC=F), which track spot gold closely.
 Writes <out>/<SYM>_1h.csv and <out>/<SYM>_1d.csv with columns t,o,h,l,c (t = bar open, unix UTC).
-Usage: python3 yahoo_fetch.py OUT_DIR
+Usage: python3 yahoo_fetch.py OUT_DIR [SYM,SYM,...]
 """
 import csv
 import json
@@ -15,7 +15,12 @@ from datetime import datetime, timezone
 SYMBOLS = {
     'EUR/USD': 'EURUSD=X', 'GBP/USD': 'GBPUSD=X', 'USD/JPY': 'JPY=X', 'AUD/USD': 'AUDUSD=X',
     'USD/CAD': 'CAD=X', 'USD/CHF': 'CHF=X', 'NZD/USD': 'NZDUSD=X', 'XAU/USD': 'GC=F',
+    # Wider hunt: crosses, crypto, US index futures, silver, oil
+    'EUR/JPY': 'EURJPY=X', 'GBP/JPY': 'GBPJPY=X', 'AUD/JPY': 'AUDJPY=X', 'EUR/GBP': 'EURGBP=X',
+    'BTC/USD': 'BTC-USD', 'ETH/USD': 'ETH-USD', 'US500': 'ES=F', 'US100': 'NQ=F', 'US30': 'YM=F',
+    'XAG/USD': 'SI=F', 'WTI': 'CL=F',
 }
+ONLY = sys.argv[2].split(',') if len(sys.argv) > 2 else None
 
 
 def ts(day):
@@ -42,6 +47,8 @@ def main():
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
     for sym, ticker in SYMBOLS.items():
+        if ONLY and sym not in ONLY:
+            continue
         for interval, start, suffix in (('60m', '2025-01-02', '1h'), ('1d', '2024-06-01', '1d')):
             rows = fetch(ticker, interval, start)
             path = os.path.join(out, sym.replace('/', '_') + f'_{suffix}.csv')
