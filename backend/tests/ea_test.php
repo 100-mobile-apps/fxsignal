@@ -1,6 +1,8 @@
 <?php
 // Checks for the auto-trade bot endpoint: key handling, strategy/market filtering, closed list.
 putenv('FX_CONFIG=' . __DIR__ . '/test_config.php');
+// CLI "headers already sent" warnings must not land in the captured JSON output.
+ini_set('display_errors', 'stderr');
 @unlink(__DIR__ . '/test.db');
 require __DIR__ . '/../api/src/bootstrap.php';
 Db::pdo()->exec(require __DIR__ . '/sqlite_schema.php');

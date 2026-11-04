@@ -32,23 +32,36 @@ class SignalMoneyLine extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.payments_outlined, size: 16, color: AppColors.gold),
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(Icons.payments_outlined, size: 16, color: AppColors.gold),
+          ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              'At ${p.riskPct.toStringAsFixed(p.riskPct == p.riskPct.roundToDouble() ? 0 : 1)}% of ${Fmt.money(p.accountSize).replaceAll('.00', '')}',
-              style: AppText.caption,
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 2,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  'At ${p.riskPct.toStringAsFixed(p.riskPct == p.riskPct.roundToDouble() ? 0 : 1)}% of ${Fmt.money(p.accountSize).replaceAll('.00', '')}',
+                  style: AppText.caption,
+                ),
+                Text.rich(
+                  TextSpan(children: [
+                    TextSpan(text: usdSigned(m.stop.usd), style: const TextStyle(color: AppColors.sell)),
+                    const TextSpan(text: '  ·  ', style: TextStyle(color: AppColors.text3, fontWeight: FontWeight.w400)),
+                    TextSpan(text: usdSigned(m.locked.usd), style: const TextStyle(color: AppColors.buy)),
+                    const TextSpan(text: '  ·  ', style: TextStyle(color: AppColors.text3, fontWeight: FontWeight.w400)),
+                    TextSpan(text: usdSigned(m.tp2.usd), style: const TextStyle(color: AppColors.buy)),
+                  ]),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                ),
+              ],
             ),
           ),
-          Text(usdSigned(m.stop.usd),
-              style: const TextStyle(color: AppColors.sell, fontWeight: FontWeight.w800, fontSize: 12.5)),
-          const Text('  ·  ', style: TextStyle(color: AppColors.text3)),
-          Text(usdSigned(m.locked.usd),
-              style: const TextStyle(color: AppColors.buy, fontWeight: FontWeight.w800, fontSize: 12.5)),
-          const Text('  ·  ', style: TextStyle(color: AppColors.text3)),
-          Text(usdSigned(m.tp2.usd),
-              style: const TextStyle(color: AppColors.buy, fontWeight: FontWeight.w800, fontSize: 12.5)),
         ],
       ),
     );
@@ -73,7 +86,7 @@ class SignalMoneyTable extends StatelessWidget {
             children: [
               const Icon(Icons.payments_outlined, size: 18, color: AppColors.gold),
               const SizedBox(width: 8),
-              const Text('What this signal could do to your account', style: AppText.title),
+              const Expanded(child: Text('What this signal could do to your account', style: AppText.title)),
             ],
           ),
           const SizedBox(height: 4),
