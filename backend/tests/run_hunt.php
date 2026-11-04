@@ -7,6 +7,8 @@ declare(strict_types=1);
  *   80/160  - two halves: TP1 at 2.67x the stop (+80% of the account at 30% risk), TP2 at 5.33x (+160%);
  *             after TP1 the second half's stop goes to entry, halfway to TP2 it goes to TP1
  *   trail   - no target: the stop trails 3 ATR behind the best close since entry
+ *   4R/8R   - like 80/160 but TP1 at 4x the stop and TP2 at 8x
+ * HUNT_TRADES=1 prints every trade (entry time and net result in stop units) instead of monthly rows.
  * Money: each market starts every month with $100 and risks 30% of its balance per trade, compounding within the
  * month. A trade counts in the month it opens. After spread. Rows per month so 2025 can be used to choose and 2026
  * to judge.
@@ -176,14 +178,15 @@ function run_trades(array $b, array $x, array $sigs, callable $cost, float $pip,
         if ($mode === 'own' && $tp !== null && ($tp - $entry) * $s['dir'] <= 0) continue;
         $open = ['dir' => $s['dir'], 'entry' => $entry, 'sl' => $sl, 'tp' => $tp, 'exit' => $s['exit'] ?? null, 'risk' => $risk,
             'i' => $i + 1, 't' => $b[$i + 1]['t'], 'a' => null, 'b' => null, 'bstop' => $sl, 'best' => $entry,
-            'tp1' => $entry + $s['dir'] * (80 / 30) * $risk, 'tp2' => $entry + $s['dir'] * (160 / 30) * $risk];
+            'tp1' => $entry + $s['dir'] * ($mode === '4R/8R' ? 4.0 : 80 / 30) * $risk,
+            'tp2' => $entry + $s['dir'] * ($mode === '4R/8R' ? 8.0 : 160 / 30) * $risk];
     }
     return $tr;
 }
 
 $months = [];
 for ($y = 2025; $y <= 2026; $y++) for ($m = 1; $m <= 12; $m++) { $k = sprintf('%d-%02d', $y, $m); if ($k <= '2026-11') $months[] = $k; }
-$rows = [];
+$rows = []; $tradesOut = []; $wantTrades = (bool) getenv('HUNT_TRADES');
 $only = getenv('HUNT_MARKETS') ? explode(',', getenv('HUNT_MARKETS')) : null;
 foreach (['H1' => 72, 'H4' => 90, 'D1' => 30] as $tf => $maxBars) {
     foreach ($markets as $mk => [$pip, $fixed, $pct]) {
@@ -198,9 +201,14 @@ foreach (['H1' => 72, 'H4' => 90, 'D1' => 30] as $tf => $maxBars) {
         foreach ($strategies as $name => $sig) {
             if ($tf !== 'H1' && str_starts_with($name, 'New York open')) continue;
             $sigs = signals($bars, $x, $sig);
-            foreach (['own', '80/160', 'trail'] as $mode) {
+            foreach (['own', '80/160', 'trail', '4R/8R'] as $mode) {
                 $byMonth = [];
-                foreach (run_trades($bars, $x, $sigs, $cost, $pip, $mode, $maxBars) as $t) $byMonth[gmdate('Y-m', $t['t'])][] = $t;
+                $list = run_trades($bars, $x, $sigs, $cost, $pip, $mode, $maxBars);
+                if ($wantTrades) {
+                    $tradesOut[] = [$tf, $mode, $name, $mk, array_map(fn($t) => [$t['t'], round($t['r'], 3)], array_values(array_filter($list, fn($t) => $t['t'] >= 1738368000)))];
+                    continue;
+                }
+                foreach ($list as $t) $byMonth[gmdate('Y-m', $t['t'])][] = $t;
                 foreach ($months as $key) {
                     $bal = 100.0; $wins = 0; $pips = 0.0; $low = 100.0; $list = $byMonth[$key] ?? [];
                     foreach ($list as $t) { $bal = max(0.0, $bal * (1 + 0.30 * $t['r'])); $low = min($low, $bal); $wins += $t['r'] > 0 ? 1 : 0; $pips += $t['pips']; }
@@ -212,4 +220,5 @@ foreach (['H1' => 72, 'H4' => 90, 'D1' => 30] as $tf => $maxBars) {
         fwrite(STDERR, "$tf $mk done\n");
     }
 }
+if ($wantTrades) { echo json_encode(['columns' => ['timeframe', 'targets', 'strategy', 'market', 'trades'], 'rows' => $tradesOut], JSON_UNESCAPED_SLASHES), "\n"; exit; }
 echo json_encode(['columns' => ['timeframe', 'targets', 'strategy', 'market', 'month', 'trades', 'wins', 'pips', 'profit', 'lowest'], 'rows' => $rows], JSON_UNESCAPED_SLASHES), "\n";
