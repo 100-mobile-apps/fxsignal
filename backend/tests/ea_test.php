@@ -7,6 +7,7 @@ ini_set('display_errors', 'stderr');
 require __DIR__ . '/../api/src/bootstrap.php';
 Db::pdo()->exec(require __DIR__ . '/sqlite_schema.php');
 $GLOBALS['__CONFIG']['default_pairs'] = ['XAU/USD'];
+$GLOBALS['__CONFIG']['strategy_order'] = ['classic']; // these checks are about markets, not the default strategy
 $GLOBALS['__CONFIG']['auto_default_pairs'] = false;
 $pass = 0; $fail = 0;
 function ok(bool $c, string $m): void { global $pass, $fail; echo ($c ? '  PASS ' : '  FAIL ') . $m . "\n"; $c ? $pass++ : $fail++; }

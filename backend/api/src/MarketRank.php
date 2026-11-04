@@ -41,7 +41,10 @@ final class MarketRank
     {
         $b = self::load()['best_strategy'] ?? null;
         if (is_string($b) && Strategies::valid($b) && in_array($b, Strategies::keys(), true)) return $b;
-        $prior = (array) config('strategy_priors', ['classic', 'steady', 'adaptive', 'high_reward']);
+        // Until a strategy proves itself live (20+ results, positive after costs), use the agreed order:
+        // Steady first (best balance of profit and drawdown in the 3-year backtest), classic last.
+        // New config key so an older 'strategy_priors' (classic first) in a live config cannot override it.
+        $prior = (array) config('strategy_order', ['steady', 'high_reward', 'adaptive', 'classic']);
         foreach ($prior as $k) if (Strategies::valid($k) && !Strategies::INFO[$k]['optin'] && in_array($k, Strategies::keys(), true)) return $k;
         return 'classic';
     }

@@ -7,6 +7,7 @@ ini_set('display_errors', 'stderr');
 require __DIR__ . '/../api/src/bootstrap.php';
 Db::pdo()->exec(require __DIR__ . '/sqlite_schema.php');
 $GLOBALS['__CONFIG']['default_pairs'] = ['XAU/USD'];
+$GLOBALS['__CONFIG']['strategy_order'] = ['classic']; // these checks are about markets, not the default strategy
 $GLOBALS['__CONFIG']['auto_default_pairs'] = true;
 $pass = 0; $fail = 0;
 function ok(bool $c, string $m): void { global $pass, $fail; echo ($c ? '  PASS ' : '  FAIL ') . $m . "\n"; $c ? $pass++ : $fail++; }
@@ -86,5 +87,12 @@ $hist = array_merge($rowsFor('EUR/USD', 8, 12, '2026-10-05 10:00:00'), $rowsFor(
 ok(MarketRank::pickAt($hist, $wk) === ['EUR/USD'], 'pick uses only the 14 days before: winner with 8+ trades (' . implode(',', MarketRank::pickAt($hist, $wk)) . ')');
 ok(MarketRank::pickAt($hist, strtotime('2026-10-05 00:00:00 UTC')) === ['XAU/USD'], 'nothing qualifies yet: falls back to gold');
 ok(MarketRank::pickAt($hist, strtotime('2026-11-30 00:00:00 UTC')) === ['XAU/USD'], 'old trades drop out of the window');
+
+echo "== Default strategy ==\n";
+$GLOBALS['__CONFIG']['strategy_order'] = null; unset($GLOBALS['__CONFIG']['strategy_order']);
+(new ReflectionProperty('MarketRank', 'stored'))->setValue(null, ['best_strategy' => null]);
+ok(MarketRank::bestStrategy() === 'steady', 'nothing proven live yet: Steady is the default, not classic (' . MarketRank::bestStrategy() . ')');
+(new ReflectionProperty('MarketRank', 'stored'))->setValue(null, ['best_strategy' => 'high_reward']);
+ok(MarketRank::bestStrategy() === 'high_reward', 'a strategy proven live (20+ results, positive) takes over');
 
 echo "\n$pass passed, $fail failed\n"; exit($fail ? 1 : 0);
