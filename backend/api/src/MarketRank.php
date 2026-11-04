@@ -52,6 +52,31 @@ final class MarketRank
         return ($chosen !== null && Strategies::valid($chosen)) ? $chosen : self::bestStrategy();
     }
 
+    /**
+     * The best markets as the app would have picked them at $ts: from trades closed in the 14 days before,
+     * at least MIN_TRADES and a positive score after costs, top TOP_N; otherwise the configured default (gold).
+     * Used to replay "follow the best markets" week by week without hindsight.
+     */
+    public static function pickAt(array $closedRows, int $ts): array
+    {
+        $main = (array) config('pairs', []);
+        $from = now($ts - self::WINDOW_DAYS * 86400);
+        $to = now($ts);
+        $by = [];
+        foreach ($closedRows as $s) {
+            $c = (string) $s['closed_at'];
+            if ($c < $from || $c >= $to || !in_array($s['pair'], $main, true)) continue;
+            $by[$s['pair']]['trades'] = ($by[$s['pair']]['trades'] ?? 0) + 1;
+            $by[$s['pair']]['score'] = ($by[$s['pair']]['score'] ?? 0.0) + Perf::net($s);
+        }
+        $ok = array_filter($by, fn($m) => $m['trades'] >= self::MIN_TRADES && $m['score'] > 0);
+        uasort($ok, fn($a, $b) => $b['score'] <=> $a['score']);
+        $top = array_slice(array_keys($ok), 0, self::TOP_N);
+        if ($top) return $top;
+        $d = array_values(array_intersect((array) config('default_pairs', ['XAU/USD']), $main));
+        return $d ?: ['XAU/USD'];
+    }
+
     public static function refresh(int $nowTs): array
     {
         $main = (array) config('pairs', []);

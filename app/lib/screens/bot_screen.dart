@@ -92,6 +92,22 @@ class _BotScreenState extends State<BotScreen> {
             ),
           ),
           const SizedBox(height: 14),
+          GlassCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('What it trades', style: AppText.title),
+                const SizedBox(height: 6),
+                Text(
+                  'The same signals as your Signals tab: your markets (or the best 3 right now), '
+                  'your strategy (${prefs?.strategyChosen == true ? prefs!.strategy.replaceAll('_', ' ') : 'always the best one'}) '
+                  'and $risk% risk per signal. Change these in the app and the robot follows.',
+                  style: AppText.body,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
           if (_error != null) InfoBanner(icon: Icons.error_outline, text: _error!, color: AppColors.sell),
           GlassCard(
             child: Column(

@@ -72,4 +72,19 @@ $names = fn($pair) => array_column($m->invoke(null, 'email_signals', $pair), 'na
 ok(in_array('Own', $names('EUR/USD'), true) && !in_array('Own', $names('XAU/USD'), true), 'own pick gets EUR/USD alerts only');
 ok(in_array('Best', $names('XAU/USD'), true) && !in_array('Best', $names('EUR/USD'), true), 'no pick gets default-market alerts only');
 
+echo "== Best markets are re-picked week by week (no hindsight) ==\n";
+$wk = Results::weekStart(strtotime('2026-10-15 12:00:00 UTC'));
+ok(gmdate('Y-m-d H:i', $wk) === '2026-10-12 00:00', 'week starts Monday 00:00 UTC');
+$rowsFor = function (string $pair, int $n, float $pips, string $closed) {
+    $o = [];
+    for ($i = 0; $i < $n; $i++) $o[] = ['pair' => $pair, 'entry' => 1.1, 'stop_loss' => 1.099, 'tp1' => 1.101, 'tp2' => 1.102,
+        'pips' => $pips, 'closed_at' => $closed, 'direction' => 'BUY'];
+    return $o;
+};
+$hist = array_merge($rowsFor('EUR/USD', 8, 12, '2026-10-05 10:00:00'), $rowsFor('NZD/USD', 8, -12, '2026-10-05 10:00:00'),
+    $rowsFor('USD/JPY', 3, 30, '2026-10-05 10:00:00'));
+ok(MarketRank::pickAt($hist, $wk) === ['EUR/USD'], 'pick uses only the 14 days before: winner with 8+ trades (' . implode(',', MarketRank::pickAt($hist, $wk)) . ')');
+ok(MarketRank::pickAt($hist, strtotime('2026-10-05 00:00:00 UTC')) === ['XAU/USD'], 'nothing qualifies yet: falls back to gold');
+ok(MarketRank::pickAt($hist, strtotime('2026-11-30 00:00:00 UTC')) === ['XAU/USD'], 'old trades drop out of the window');
+
 echo "\n$pass passed, $fail failed\n"; exit($fail ? 1 : 0);

@@ -25,11 +25,25 @@ final class Results
         if ($strategy !== '' && Strategies::valid($strategy)) { $where .= ' AND strategy = ?'; $params[] = $strategy; }
         $all = Db::all("SELECT * FROM signals WHERE $where ORDER BY closed_at, id", $params);
 
-        // pairs=best -> the current best markets; pairs=EUR/USD,XAU/USD -> those markets; empty -> every market
+        // pairs=best -> the best markets as picked each week from the 14 days before (no hindsight);
+        // pairs=EUR/USD,XAU/USD -> those markets; empty -> every market
         $filterPairs = null;
-        if ($pairsParam === 'best') $filterPairs = default_pairs();
-        elseif ($pairsParam !== '') $filterPairs = array_values(array_intersect(array_map('trim', explode(',', $pairsParam)), array_merge((array) config('pairs', []))));
-        $rows = $filterPairs === null ? $all : array_values(array_filter($all, fn($s) => in_array($s['pair'], $filterPairs, true)));
+        $picks = [];
+        if ($pairsParam === 'best') {
+            $rows = [];
+            foreach ($all as $s) {
+                $week = self::weekStart(strtotime((string) $s['opened_at']));
+                $picks[$week] = $picks[$week] ?? MarketRank::pickAt($all, $week);
+                if (in_array($s['pair'], $picks[$week], true)) $rows[] = $s;
+            }
+            $filterPairs = default_pairs();
+        } else {
+            if ($pairsParam !== '') $filterPairs = array_values(array_intersect(array_map('trim', explode(',', $pairsParam)), array_merge((array) config('pairs', []))));
+            $rows = $filterPairs === null ? $all : array_values(array_filter($all, fn($s) => in_array($s['pair'], $filterPairs, true)));
+        }
+        ksort($picks);
+        $weeklyPicks = [];
+        foreach ($picks as $w => $list) $weeklyPicks[] = ['week' => gmdate('Y-m-d', $w), 'markets' => $list];
 
         $sim = Perf::simulate($rows, $account, $risk);
 
@@ -87,7 +101,8 @@ final class Results
 
         Http::send([
             'params' => ['account' => $account, 'risk' => $risk, 'days' => $days, 'strategy' => $strategy ?: null,
-                'pairs' => $filterPairs === null ? null : $filterPairs],
+                'pairs' => $filterPairs === null ? null : $filterPairs, 'best_weekly' => $pairsParam === 'best'],
+            'weekly_picks' => $weeklyPicks,
             'basis' => 'live',
             'note' => 'Based on the signals this app has actually published and tracked. Each signal is counted as two half-size '
                 . 'trades (TP1 and TP2) with the stop moved to entry, then to TP1, as the alerts tell you. Figures are after typical '
@@ -102,6 +117,13 @@ final class Results
             'best_markets' => (array) ($rank['top'] ?? []),
             'best_strategy' => MarketRank::bestStrategy(),
         ]);
+    }
+
+    /** Monday 00:00 UTC of the week containing $ts. */
+    public static function weekStart(int $ts): int
+    {
+        $d = (int) gmdate('N', $ts);
+        return (int) (floor($ts / 86400) * 86400) - ($d - 1) * 86400;
     }
 
     /** GET /strategies and /markets/rank: what the app needs to show the pickers. */

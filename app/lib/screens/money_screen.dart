@@ -228,10 +228,18 @@ class _MoneyScreenState extends State<MoneyScreen> {
             child: Row(
               children: [
                 _chip('All markets', store.pairsFilter == null, () => store.setPairs(null)),
-                _chip('Best right now', store.pairsFilter == 'best', () => store.setPairs('best')),
+                _chip('Best 3, picked weekly', store.pairsFilter == 'best', () => store.setPairs('best')),
               ],
             ),
           ),
+          if (store.pairsFilter == 'best') ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Each Monday the best 3 markets of the previous 14 days are picked, and only their next week counts, '
+              'the same way the app picks them for you. No hindsight.',
+              style: AppText.caption,
+            ),
+          ],
         ],
       ),
     );
