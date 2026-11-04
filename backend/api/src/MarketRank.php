@@ -75,7 +75,7 @@ final class MarketRank
         $ok = array_filter($by, fn($m) => $m['trades'] >= self::MIN_TRADES && $m['score'] > 0);
         uasort($ok, fn($a, $b) => $b['score'] <=> $a['score']);
         $top = array_slice(array_keys($ok), 0, self::TOP_N);
-        if ($top) return $top;
+        if ($top) return with_gold($top, $main);
         $d = array_values(array_intersect((array) config('default_pairs', ['XAU/USD']), $main));
         return $d ?: ['XAU/USD'];
     }

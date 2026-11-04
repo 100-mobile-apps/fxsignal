@@ -551,7 +551,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                     activeColor: AppColors.gold,
                     title: const Text('Best markets right now', style: TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: Text(
-                        'The top 3 over the last 14 days, after costs. Changes as results come in.'
+                        'Gold, plus the top markets of the last 14 days after costs. Changes as results come in.'
                         '${!prefs.pairsChosen && selected.isNotEmpty ? ' Now: ${selected.map(_marketName).join(', ')}.' : ''}',
                         style: AppText.caption),
                   ),

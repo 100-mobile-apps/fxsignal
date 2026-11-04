@@ -84,9 +84,13 @@ $rowsFor = function (string $pair, int $n, float $pips, string $closed) {
 };
 $hist = array_merge($rowsFor('EUR/USD', 8, 12, '2026-10-05 10:00:00'), $rowsFor('NZD/USD', 8, -12, '2026-10-05 10:00:00'),
     $rowsFor('USD/JPY', 3, 30, '2026-10-05 10:00:00'));
-ok(MarketRank::pickAt($hist, $wk) === ['EUR/USD'], 'pick uses only the 14 days before: winner with 8+ trades (' . implode(',', MarketRank::pickAt($hist, $wk)) . ')');
+ok(MarketRank::pickAt($hist, $wk) === ['XAU/USD', 'EUR/USD'], 'pick uses only the 14 days before, plus gold (' . implode(',', MarketRank::pickAt($hist, $wk)) . ')');
 ok(MarketRank::pickAt($hist, strtotime('2026-10-05 00:00:00 UTC')) === ['XAU/USD'], 'nothing qualifies yet: falls back to gold');
 ok(MarketRank::pickAt($hist, strtotime('2026-11-30 00:00:00 UTC')) === ['XAU/USD'], 'old trades drop out of the window');
+
+echo "== Gold is always a default market ==\n";
+ok(with_gold(['GBP/USD'], ['GBP/USD', 'XAU/USD']) === ['XAU/USD', 'GBP/USD'], 'gold added first');
+ok(with_gold(['XAU/USD', 'USD/CAD'], ['USD/CAD', 'XAU/USD']) === ['XAU/USD', 'USD/CAD'], 'no duplicate gold');
 
 echo "== Default strategy ==\n";
 $GLOBALS['__CONFIG']['strategy_order'] = null; unset($GLOBALS['__CONFIG']['strategy_order']);

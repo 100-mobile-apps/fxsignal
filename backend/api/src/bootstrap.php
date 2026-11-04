@@ -29,8 +29,8 @@ function iso(?string $dt): ?string
 }
 
 /**
- * Markets a user follows until they choose their own: the best recent markets (see MarketRank) when ranking is on
- * and enough results exist, otherwise config 'default_pairs', otherwise gold.
+ * Markets a user follows until they choose their own: gold, always, plus the best recent markets
+ * (see MarketRank) when ranking is on and enough results exist. Gold first.
  */
 function default_pairs(): array
 {
@@ -39,7 +39,7 @@ function default_pairs(): array
     $all = (array) config('pairs', []);
     $ranked = config('auto_default_pairs', true) && class_exists('MarketRank') ? MarketRank::top() : [];
     $ranked = array_values(array_intersect($ranked, $all));
-    if ($ranked) return $cache = $ranked;
+    if ($ranked) return $cache = with_gold($ranked, $all);
     $d = config('default_pairs');
     $d = is_array($d) ? array_values(array_intersect($d, $all)) : [];
     // Never fall back to every market: gold is the agreed default until the ranking picks the best ones.
@@ -78,6 +78,13 @@ function markets_scope(array $u): array
     $info = ['mode' => $mode, 'markets' => $pairs, 'source' => user_pairs_source($u), 'best_markets' => default_pairs()];
     if ($mode === 'all' || !$pairs) return ['', [], $info];
     return [' AND pair IN (' . implode(',', array_fill(0, count($pairs), '?')) . ')', $pairs, $info];
+}
+
+/** Gold is always one of the default markets (agreed 2026-11-04): it is Steady's best market in the backtest. */
+function with_gold(array $pairs, array $all): array
+{
+    if (!in_array('XAU/USD', $all, true)) return $pairs;
+    return array_values(array_unique(array_merge(['XAU/USD'], $pairs)));
 }
 
 function is_crypto(string $pair): bool

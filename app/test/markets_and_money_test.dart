@@ -101,7 +101,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
       }
       expect(find.text('Your markets: Gold, USD/CAD, GBP/USD'), findsOneWidget);
-      expect(find.textContaining('best 3 markets over the last 14 days'), findsOneWidget);
+      expect(find.textContaining('best markets of the last 14 days'), findsOneWidget);
       expect(signals.running.every((s) => ['XAU/USD', 'USD/CAD', 'GBP/USD'].contains(s.pair)), isTrue);
 
       await tester.tap(find.byType(Switch));

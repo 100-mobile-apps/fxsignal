@@ -353,7 +353,7 @@ class _MarketsBar extends StatelessWidget {
       why = switch (s?.source) {
         'chosen' => 'The markets you picked.',
         'default' => 'Gold until enough recent results pick the best markets.',
-        _ => 'The best 3 markets over the last 14 days, after trading costs. Updated as results come in.',
+        _ => 'Gold, plus the best markets of the last 14 days after trading costs. Updated as results come in.',
       };
     }
     return GestureDetector(

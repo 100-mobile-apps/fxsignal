@@ -235,7 +235,7 @@ class _MoneyScreenState extends State<MoneyScreen> {
           if (store.pairsFilter == 'best') ...[
             const SizedBox(height: 8),
             const Text(
-              'Each Monday the best 3 markets of the previous 14 days are picked, and only their next week counts, '
+              'Each Monday gold plus the best markets of the previous 14 days are picked, and only their next week counts, '
               'the same way the app picks them for you. No hindsight.',
               style: AppText.caption,
             ),
