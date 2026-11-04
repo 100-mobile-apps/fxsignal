@@ -30,7 +30,7 @@ function iso(?string $dt): ?string
 
 /**
  * Markets a user follows until they choose their own: the best recent markets (see MarketRank) when ranking is on
- * and enough results exist, otherwise config 'default_pairs', otherwise every pair.
+ * and enough results exist, otherwise config 'default_pairs', otherwise gold.
  */
 function default_pairs(): array
 {
@@ -42,7 +42,8 @@ function default_pairs(): array
     if ($ranked) return $cache = $ranked;
     $d = config('default_pairs');
     $d = is_array($d) ? array_values(array_intersect($d, $all)) : [];
-    return $cache = ($d ?: $all);
+    // Never fall back to every market: gold is the agreed default until the ranking picks the best ones.
+    return $cache = ($d ?: (in_array('XAU/USD', $all, true) ? ['XAU/USD'] : $all));
 }
 
 /** Markets this user follows: their own choice if they made one, else the best recent markets (default_pairs). */
