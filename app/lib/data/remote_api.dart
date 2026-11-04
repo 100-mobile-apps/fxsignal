@@ -1,3 +1,4 @@
+import '../models/gold_test.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -198,6 +199,9 @@ class RemoteApi extends Api {
         if (accountSize != null) 'account_size': accountSize,
         if (riskPct != null) 'risk_pct': riskPct,
       }));
+
+  @override
+  Future<GoldTestData> goldTest() async => GoldTestData.fromJson(await _req('GET', '/gold-test'));
 
   @override
   Future<BotKey> botKey({bool rotate = false}) async =>

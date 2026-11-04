@@ -43,6 +43,11 @@ final class Strategies
             'blurb' => 'The original multi-indicator engine (EMA trend, MACD, RSI, crossovers).',
             'expiry_h' => 72, 'min' => 200, 'optin' => false,
         ],
+        'turtle' => [
+            'name' => 'Gold breakout',
+            'blurb' => 'Gold only. Buys a close above the last 20 four-hour highs (sells below the lows), stop 2 ATR, targets 2.67 and 5.33 times the stop. Part of the gold live test.',
+            'expiry_h' => 360, 'min' => 1000, 'optin' => false, 'pairs' => ['XAU/USD'],
+        ],
         'win90' => [
             'name' => 'High win rate (90% style)',
             'blurb' => 'Tiny targets with a very wide stop. It wins very often, but one loss can erase many wins. Opt-in only.',
@@ -55,6 +60,12 @@ final class Strategies
         $on = config('strategies');
         $all = array_keys(self::INFO);
         return is_array($on) ? array_values(array_intersect($all, $on)) : $all;
+    }
+
+    /** Markets a strategy may trade; null = every market. */
+    public static function pairs(string $key): ?array
+    {
+        return self::INFO[$key]['pairs'] ?? null;
     }
 
     public static function valid(string $key): bool
@@ -82,6 +93,7 @@ final class Strategies
             case 'adaptive': return self::adaptive($c);
             case 'high_reward': return self::highReward($c);
             case 'win90': return self::win90($c);
+            case 'turtle': return self::turtle($c);
         }
         return null;
     }
@@ -220,6 +232,34 @@ final class Strategies
             "4-hour Parabolic SAR just flipped $side",
             'Direction agrees with the 4-hour 200 EMA trend',
             'Stop at the SAR level',
+        ]);
+    }
+
+    /**
+     * Gold breakout (Turtle System 1 entry): the 4h candle that just closed ends above the highest high of the 20 before it
+     * (buy) or below the lowest low (sell). Stop 2 ATR(4h); TP1 2.67x and TP2 5.33x the stop, as in the 2025-26 backtest
+     * (+80% / +160% of the account at 30% risk). The tracker's two-half rule then moves the TP2 stop to entry after TP1.
+     */
+    private static function turtle(array $c1): ?array
+    {
+        $b = self::to4h($c1);
+        $n = count($b);
+        if ($n < 40) return null;
+        $i = $n - 1;
+        if ($b[$i]['t'] + 14400 < $c1[count($c1) - 1]['t'] + 3600 - 3600 * 1) return null;   // breakout candle must be fresh
+        $hi = -INF; $lo = INF;
+        for ($k = $i - 20; $k < $i; $k++) { $hi = max($hi, (float) $b[$k]['h']); $lo = min($lo, (float) $b[$k]['l']); }
+        $close = (float) $b[$i]['c'];
+        $d = $close > $hi ? 1 : ($close < $lo ? -1 : 0);
+        if ($d === 0) return null;
+        $atr4 = self::lastAtr($b);
+        if ($atr4 <= 0) return null;
+        $price = (float) $c1[count($c1) - 1]['c'];
+        [$sl, $tp1, $tp2] = self::levels($d, $price, 2.0 * $atr4, 80 / 30, 160 / 30);
+        return self::out($d === 1 ? 'BUY' : 'SELL', $price, $sl, $tp1, $tp2, $atr4 / 4, 70, [
+            $d === 1 ? '4-hour close above the last 20 highs' : '4-hour close below the last 20 lows',
+            'Stop 2 ATR away; TP1 2.67x and TP2 5.33x the stop',
+            'Gold live test strategy',
         ]);
     }
 

@@ -134,6 +134,8 @@ final class Cron
     private static function maybeOpen(string $pair, string $strategy, bool $watchOnly, string $tf, int $tfSec, array $closed, array $all, int $now, ?callable $clock = null): string
     {
         $tag = $strategy === 'classic' ? $pair : "$pair/$strategy";
+        $only = Strategies::pairs($strategy);
+        if ($only !== null && !in_array($pair, $only, true)) return "$tag: not traded on this market";
         $publish = config('publish_pairs');
         $published = !$watchOnly && !(is_array($publish) && !in_array($pair, $publish, true)) ? 1 : 0;
         if ($published === 0 && !$watchOnly) return "$tag: tracking only (not in publish_pairs)";

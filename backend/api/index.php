@@ -40,6 +40,7 @@ $routes = [
     ['GET', '#^/ea/signals$#', fn() => Ea::signals()],
     ['GET', '#^/results$#', fn() => Results::show()],
     ['GET', '#^/strategies$#', fn() => Results::strategies()],
+    ['GET', '#^/gold-test$#', fn() => GoldTest::show()],
     ['GET', '#^/signals$#', fn() => Signals::list()],
     ['GET', '#^/signals/(?P<id>\d+)$#', fn($p) => Signals::show($p)],
     ['GET', '#^/stats$#', fn() => Stats::show()],

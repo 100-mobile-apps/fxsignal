@@ -10,6 +10,7 @@ import '../widgets/common.dart';
 import '../widgets/signal_card.dart';
 import 'legal_screen.dart';
 import 'bot_screen.dart';
+import 'gold_test_screen.dart';
 import 'money_screen.dart';
 import 'reports_view.dart';
 import 'signals_screen.dart';
@@ -120,6 +121,28 @@ class _Overview extends StatelessWidget {
                     ),
                   ),
                   const Icon(Icons.chevron_right_rounded, color: AppColors.text3),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            GlassCard(
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GoldTestScreen())),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified_outlined, color: AppColors.gold),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Gold live test', style: AppText.title),
+                        SizedBox(height: 2),
+                        Text('Real gold signals judged against pass marks set in advance. See how it is going.',
+                            style: AppText.caption),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.text3),
                 ],
               ),
             ),
