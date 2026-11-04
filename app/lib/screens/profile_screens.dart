@@ -533,9 +533,40 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             ),
           ),
           const SizedBox(height: 22),
-          SectionHeader('Markets',
-              action: prefs.pairs == null ? null : 'Select all',
-              onAction: () => _update(prefs.copyWith(allPairs: true))),
+          const SectionHeader('Your markets'),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text('Your Signals tab, the 30-day card and your alerts follow these markets.',
+                style: AppText.caption),
+          ),
+          GlassCard(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: RadioGroup<bool>(
+              groupValue: prefs.pairsChosen,
+              onChanged: (v) => _update(v == true ? prefs.copyWith(pairs: [...selected]) : prefs.copyWith(allPairs: true)),
+              child: Column(
+                children: [
+                  RadioListTile<bool>(
+                    value: false,
+                    activeColor: AppColors.gold,
+                    title: const Text('Best markets right now', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(
+                        'The top 3 over the last 14 days, after costs. Changes as results come in.'
+                        '${!prefs.pairsChosen && selected.isNotEmpty ? ' Now: ${selected.map(_marketName).join(', ')}.' : ''}',
+                        style: AppText.caption),
+                  ),
+                  const Divider(height: 1),
+                  const RadioListTile<bool>(
+                    value: true,
+                    activeColor: AppColors.gold,
+                    title: Text('Pick my own', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text('Only the markets you tick below.', style: AppText.caption),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           GlassCard(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
@@ -546,16 +577,18 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                     onChanged: (v) {
                       final next = [...selected];
                       if (v == true) {
-                        next.add(p);
+                        if (!next.contains(p)) next.add(p);
                       } else {
                         next.remove(p);
                       }
-                      _update(next.length == AppConfig.pairs.length
-                          ? prefs.copyWith(allPairs: true)
-                          : prefs.copyWith(pairs: next));
+                      if (next.isEmpty) {
+                        showSnack(context, 'Pick at least one market, or choose Best markets right now.');
+                        return;
+                      }
+                      _update(prefs.copyWith(pairs: next));
                     },
                     secondary: PairAvatar(pair: p, size: 30),
-                    title: Text(p, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    title: Text(_marketName(p), style: const TextStyle(fontWeight: FontWeight.w600)),
                     controlAffinity: ListTileControlAffinity.trailing,
                   ),
               ],
@@ -566,3 +599,5 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     );
   }
 }
+
+String _marketName(String p) => p == 'XAU/USD' ? 'Gold (XAU/USD)' : p;

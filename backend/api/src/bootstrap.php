@@ -45,6 +45,40 @@ function default_pairs(): array
     return $cache = ($d ?: $all);
 }
 
+/** Markets this user follows: their own choice if they made one, else the best recent markets (default_pairs). */
+function user_pairs(array $u): array
+{
+    $all = (array) config('pairs', []);
+    $chosen = !empty($u['notify_pairs']) ? json_decode((string) $u['notify_pairs'], true) : null;
+    if (is_array($chosen)) {
+        $chosen = array_values(array_intersect($chosen, $all));
+        if ($chosen) return $chosen;
+    }
+    return default_pairs();
+}
+
+/** Where user_pairs() came from: 'chosen' by the user, 'best' recent markets, or the configured 'default'. */
+function user_pairs_source(array $u): string
+{
+    $chosen = !empty($u['notify_pairs']) ? json_decode((string) $u['notify_pairs'], true) : null;
+    if (is_array($chosen) && array_intersect($chosen, (array) config('pairs', []))) return 'chosen';
+    $ranked = config('auto_default_pairs', true) && class_exists('MarketRank') ? MarketRank::top() : [];
+    return array_intersect($ranked, (array) config('pairs', [])) ? 'best' : 'default';
+}
+
+/**
+ * Pair filter for the signal list and stats: the viewer's markets unless ?markets=all.
+ * Returns [sql fragment, params, info for the response].
+ */
+function markets_scope(array $u): array
+{
+    $mode = ($_GET['markets'] ?? 'mine') === 'all' ? 'all' : 'mine';
+    $pairs = user_pairs($u);
+    $info = ['mode' => $mode, 'markets' => $pairs, 'source' => user_pairs_source($u), 'best_markets' => default_pairs()];
+    if ($mode === 'all' || !$pairs) return ['', [], $info];
+    return [' AND pair IN (' . implode(',', array_fill(0, count($pairs), '?')) . ')', $pairs, $info];
+}
+
 function is_crypto(string $pair): bool
 {
     return (bool) preg_match('#^(BTC|ETH)/#', $pair);

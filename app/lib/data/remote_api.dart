@@ -147,8 +147,9 @@ class RemoteApi extends Api {
 
   @override
   Future<SignalPage> signals(
-      {required bool running, int page = 1, DateTime? from, DateTime? to}) async {
+      {required bool running, int page = 1, DateTime? from, DateTime? to, bool allMarkets = false}) async {
     final d = await _req('GET', '/signals', query: {
+      if (allMarkets) 'markets': 'all',
       'status': running ? 'running' : 'closed',
       'page': '$page',
       if (from != null) 'from': from.toUtc().toIso8601String(),
@@ -159,6 +160,7 @@ class RemoteApi extends Api {
           .map((e) => TradeSignal.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),
       d['has_more'] as bool? ?? false,
+      d['markets'] is Map ? MarketsScope.fromJson((d['markets'] as Map).cast<String, dynamic>()) : null,
     );
   }
 
@@ -172,8 +174,8 @@ class RemoteApi extends Api {
       ReportsData.fromJson(await _req('GET', '/reports', query: {'period': period}));
 
   @override
-  Future<Stats> stats(int days) async =>
-      Stats.fromJson(await _req('GET', '/stats', query: {'days': '$days'}));
+  Future<Stats> stats(int days, {bool allMarkets = false}) async => Stats.fromJson(await _req('GET', '/stats',
+      query: {'days': '$days', if (allMarkets) 'markets': 'all'}));
 
   @override
   Future<ResultsData> results({required double account, required double risk, String? strategy, String? pairs}) async =>

@@ -15,7 +15,13 @@ Color usdColor(double v) => v > 0 ? AppColors.buy : (v < 0 ? AppColors.sell : Ap
 UserPrefs _prefsOf(BuildContext context) =>
     context.select<SessionStore, UserPrefs>((s) => s.user?.prefs ?? const UserPrefs());
 
-/// One line on a signal card: what it would make or lose for the user's account size and risk.
+/// The high-risk level shown next to the user's own on every signal.
+const double showcaseRisk = 30;
+
+String _riskTxt(double r) => r.toStringAsFixed(r == r.roundToDouble() ? 0 : 1);
+
+/// Dollars on a signal card: what it could make or lose (open) or what it made (closed),
+/// at the user's own risk and, unless that already is 30%, at 30% too.
 class SignalMoneyLine extends StatelessWidget {
   final TradeSignal signal;
   const SignalMoneyLine({super.key, required this.signal});
@@ -23,7 +29,8 @@ class SignalMoneyLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = _prefsOf(context);
-    final m = moneyFor(signal, p.accountSize, p.riskPct);
+    final risks = [p.riskPct, if (p.riskPct != showcaseRisk) showcaseRisk];
+    final closed = !signal.isRunning && signal.pips != null;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
@@ -31,38 +38,54 @@ class SignalMoneyLine extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 1),
-            child: Icon(Icons.payments_outlined, size: 16, color: AppColors.gold),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 2,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  'At ${p.riskPct.toStringAsFixed(p.riskPct == p.riskPct.roundToDouble() ? 0 : 1)}% of ${Fmt.money(p.accountSize).replaceAll('.00', '')}',
+          Row(
+            children: [
+              const Icon(Icons.payments_outlined, size: 15, color: AppColors.gold),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${closed ? 'Result' : 'Could make or lose'} on ${Fmt.money(p.accountSize).replaceAll('.00', '')}',
                   style: AppText.caption,
                 ),
-                Text.rich(
-                  TextSpan(children: [
-                    TextSpan(text: usdSigned(m.stop.usd), style: const TextStyle(color: AppColors.sell)),
-                    const TextSpan(text: '  ·  ', style: TextStyle(color: AppColors.text3, fontWeight: FontWeight.w400)),
-                    TextSpan(text: usdSigned(m.locked.usd), style: const TextStyle(color: AppColors.buy)),
-                    const TextSpan(text: '  ·  ', style: TextStyle(color: AppColors.text3, fontWeight: FontWeight.w400)),
-                    TextSpan(text: usdSigned(m.tp2.usd), style: const TextStyle(color: AppColors.buy)),
-                  ]),
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const SizedBox(height: 4),
+          for (final r in risks) _row(r, moneyFor(signal, p.accountSize, r), closed),
         ],
+      ),
+    );
+  }
+
+  Widget _row(double risk, MoneyView m, bool closed) {
+    const strong = TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5);
+    final label = Text('At ${_riskTxt(risk)}%',
+        style: TextStyle(
+            fontSize: 12, fontWeight: FontWeight.w700, color: risk >= 20 ? AppColors.warn : AppColors.text2));
+    final Widget value;
+    if (closed) {
+      final v = m.usdFor(signal.pips!);
+      value = Text(usdSigned(v), style: strong.copyWith(color: usdColor(v)));
+    } else {
+      value = Text.rich(
+          TextSpan(children: [
+            const TextSpan(text: 'lose ', style: TextStyle(color: AppColors.text3, fontWeight: FontWeight.w400)),
+            TextSpan(text: usdSigned(m.stop.usd), style: const TextStyle(color: AppColors.sell)),
+            const TextSpan(text: '  ·  make up to ', style: TextStyle(color: AppColors.text3, fontWeight: FontWeight.w400)),
+            TextSpan(text: usdSigned(m.tp2.usd), style: const TextStyle(color: AppColors.buy)),
+          ]),
+          style: strong);
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 3),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 1,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [SizedBox(width: 44, child: label), value],
       ),
     );
   }
@@ -77,7 +100,9 @@ class SignalMoneyTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = _prefsOf(context);
     final m = moneyFor(signal, p.accountSize, p.riskPct);
-    final riskTxt = p.riskPct.toStringAsFixed(p.riskPct == p.riskPct.roundToDouble() ? 0 : 1);
+    final riskTxt = _riskTxt(p.riskPct);
+    final hi = p.riskPct == showcaseRisk ? null : moneyFor(signal, p.accountSize, showcaseRisk);
+    const head = TextStyle(fontSize: 11.5, color: AppColors.text3, fontWeight: FontWeight.w600);
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,20 +118,40 @@ class SignalMoneyTable extends StatelessWidget {
           Text('Account ${Fmt.money(p.accountSize).replaceAll('.00', '')} · risk $riskTxt% (change in Your money)',
               style: AppText.caption),
           const SizedBox(height: 12),
-          for (final l in m.lines)
+          Row(
+            children: [
+              const Expanded(child: Text('If the trade ends at', style: head)),
+              const SizedBox(width: 52, child: Text('Pips', textAlign: TextAlign.right, style: head)),
+              SizedBox(width: 82, child: Text('At $riskTxt%', textAlign: TextAlign.right, style: head)),
+              if (hi != null)
+                SizedBox(
+                    width: 82,
+                    child: Text('At ${_riskTxt(showcaseRisk)}%',
+                        textAlign: TextAlign.right, style: head.copyWith(color: AppColors.warn))),
+            ],
+          ),
+          for (var i = 0; i < m.lines.length; i++)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
-                  Expanded(child: Text(l.label, style: const TextStyle(color: AppColors.text, fontSize: 13.5))),
-                  Text('${Fmt.pips(l.pips)} pips', style: AppText.caption),
-                  const SizedBox(width: 12),
+                  Expanded(child: Text(m.lines[i].label, style: const TextStyle(color: AppColors.text, fontSize: 13))),
                   SizedBox(
-                    width: 96,
-                    child: Text(usdSigned(l.usd),
+                      width: 52,
+                      child: Text(Fmt.pips(m.lines[i].pips), textAlign: TextAlign.right, style: AppText.caption)),
+                  SizedBox(
+                    width: 82,
+                    child: Text(usdSigned(m.lines[i].usd),
                         textAlign: TextAlign.right,
-                        style: TextStyle(color: usdColor(l.usd), fontWeight: FontWeight.w800, fontSize: 14)),
+                        style: TextStyle(color: usdColor(m.lines[i].usd), fontWeight: FontWeight.w800, fontSize: 13.5)),
                   ),
+                  if (hi != null)
+                    SizedBox(
+                      width: 82,
+                      child: Text(usdSigned(hi.lines[i].usd),
+                          textAlign: TextAlign.right,
+                          style: TextStyle(color: usdColor(hi.lines[i].usd), fontWeight: FontWeight.w800, fontSize: 13.5)),
+                    ),
                 ],
               ),
             ),
@@ -123,6 +168,16 @@ class SignalMoneyTable extends StatelessWidget {
               color: AppColors.warn,
               text: 'Your account is small for this signal. The smallest possible position (two trades of 0.01 lot) risks about '
                   '${Fmt.money(m.actualRisk)}, more than the ${Fmt.money(m.wantedRisk)} your $riskTxt% would allow.',
+            ),
+          ],
+          if (hi != null) ...[
+            const SizedBox(height: 10),
+            InfoBanner(
+              icon: Icons.local_fire_department_rounded,
+              color: AppColors.warn,
+              text: 'At ${_riskTxt(showcaseRisk)}% each loss takes ${_riskTxt(showcaseRisk)}% of the account. Three losses in a row '
+                  'would cut it by about ${((1 - _pow(1 - showcaseRisk / 100, 3)) * 100).toStringAsFixed(0)}%. '
+                  'Change your risk in Your money.',
             ),
           ],
           if (p.riskPct >= 20) ...[

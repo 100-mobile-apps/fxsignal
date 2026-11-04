@@ -22,7 +22,13 @@ class MoneyView {
   final double lots;
   final bool tooSmall;
   final List<MoneyLine> lines;
-  const MoneyView(this.wantedRisk, this.actualRisk, this.lots, this.tooSmall, this.lines);
+  final double usdPerPip;
+  final double costPips;
+  const MoneyView(this.wantedRisk, this.actualRisk, this.lots, this.tooSmall, this.lines,
+      {this.usdPerPip = 0, this.costPips = 0});
+
+  /// Dollars for a finished trade's pips (both halves together), after costs.
+  double usdFor(double pips) => usdPerPip * (pips - costPips);
 
   MoneyLine get stop => lines[0];
   MoneyLine get tp1Back => lines[1];
@@ -53,7 +59,7 @@ MoneyView moneyFor(TradeSignal s, double account, double riskPct) {
     MoneyLine('TP1, halfway, back to TP1', t1, usd(t1)),
     MoneyLine('TP2 hit', (t1 + t2) / 2, usd((t1 + t2) / 2)),
   ];
-  return MoneyView(wanted, lots * stop * pv, lots, tooSmall, lines);
+  return MoneyView(wanted, lots * stop * pv, lots, tooSmall, lines, usdPerPip: lots * pv, costPips: cost);
 }
 
 class MoneySummary {

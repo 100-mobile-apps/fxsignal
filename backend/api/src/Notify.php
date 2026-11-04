@@ -14,9 +14,8 @@ final class Notify
         return array_values(array_filter($rows, function ($u) use ($pair, $strategy) {
             // People get the strategy they picked (or the current best one if they never picked).
             if ($strategy !== null && MarketRank::effectiveStrategy($u['strategy'] ?? null) !== $strategy) return false;
-            // Users who never chose markets get the default markets (gold unless configured otherwise).
-            $pairs = $u['notify_pairs'] ? json_decode($u['notify_pairs'], true) : default_pairs();
-            return !is_array($pairs) || in_array($pair, $pairs, true);
+            // Their own markets, else the best recent markets (same rule as the Signals tab).
+            return in_array($pair, user_pairs($u), true);
         }));
     }
 

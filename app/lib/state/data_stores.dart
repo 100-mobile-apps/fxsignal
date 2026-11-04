@@ -35,6 +35,19 @@ class SignalsStore extends ChangeNotifier with _Guard {
   bool loadedOnce = false;
   Timer? _timer;
 
+  /// false: only the viewer's markets (their choice, else the best 3). true: every market.
+  bool allMarkets = false;
+  MarketsScope? markets;
+
+  Future<void> setAllMarkets(bool v) async {
+    if (v == allMarkets) return;
+    allMarkets = v;
+    running = [];
+    history = [];
+    notifyListeners();
+    await refresh();
+  }
+
   void startAutoRefresh() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(minutes: 2), (_) => refresh(silent: true));
@@ -48,8 +61,9 @@ class SignalsStore extends ChangeNotifier with _Guard {
     if (!silent) error = null;
     notifyListeners();
     try {
-      final r = await api.signals(running: true);
+      final r = await api.signals(running: true, allMarkets: allMarkets);
       running = r.items;
+      markets = r.markets ?? markets;
       lastUpdated = DateTime.now();
       error = null;
       if (!silent || history.isEmpty) {
@@ -73,7 +87,7 @@ class SignalsStore extends ChangeNotifier with _Guard {
     loadingHistory = true;
     notifyListeners();
     try {
-      final page = await api.signals(running: false, page: _historyPage + 1);
+      final page = await api.signals(running: false, page: _historyPage + 1, allMarkets: allMarkets);
       _historyPage++;
       history = [...history, ...page.items];
       hasMoreHistory = page.hasMore;
@@ -91,6 +105,8 @@ class SignalsStore extends ChangeNotifier with _Guard {
     loadedOnce = false;
     _historyPage = 0;
     hasMoreHistory = true;
+    allMarkets = false;
+    markets = null;
     stopAutoRefresh();
   }
 
@@ -107,6 +123,15 @@ class StatsStore extends ChangeNotifier with _Guard {
 
   final Map<int, Stats> _cache = {};
   int days = 30;
+  bool allMarkets = false;
+
+  Future<void> setAllMarkets(bool v) async {
+    if (v == allMarkets) return;
+    allMarkets = v;
+    _cache.clear();
+    notifyListeners();
+    await Future.wait([load(forDays: 30), if (days != 30) load()]);
+  }
   bool loading = false;
   String? error;
 
@@ -125,7 +150,7 @@ class StatsStore extends ChangeNotifier with _Guard {
     error = null;
     notifyListeners();
     try {
-      _cache[d] = await api.stats(d);
+      _cache[d] = await api.stats(d, allMarkets: allMarkets);
     } catch (e) {
       error = errorText(e);
     } finally {
@@ -142,7 +167,10 @@ class StatsStore extends ChangeNotifier with _Guard {
     }
   }
 
-  void clear() => _cache.clear();
+  void clear() {
+    _cache.clear();
+    allMarkets = false;
+  }
 }
 
 class MarketStore extends ChangeNotifier with _Guard {

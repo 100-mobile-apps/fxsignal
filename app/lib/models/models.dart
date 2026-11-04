@@ -61,8 +61,11 @@ class NotificationPrefs {
   final bool results;
   final bool reports;
 
-  /// null = all pairs (applies to push and email alerts)
+  /// Markets for alerts and the Signals tab. null = all pairs (only before the server answers).
   final List<String>? pairs;
+
+  /// true when the user picked [pairs] themselves; false when they follow the best recent markets.
+  final bool pairsChosen;
   final EmailPrefs email;
 
   const NotificationPrefs(
@@ -70,6 +73,7 @@ class NotificationPrefs {
       this.results = true,
       this.reports = true,
       this.pairs,
+      this.pairsChosen = false,
       this.email = const EmailPrefs()});
 
   factory NotificationPrefs.fromJson(Map<String, dynamic> j) => NotificationPrefs(
@@ -77,6 +81,8 @@ class NotificationPrefs {
         results: j['results'] as bool? ?? true,
         reports: j['reports'] as bool? ?? true,
         pairs: (j['pairs'] as List?)?.cast<String>(),
+        // Older servers do not send pairs_chosen; then any list counts as chosen (previous behaviour).
+        pairsChosen: j['pairs_chosen'] as bool? ?? (j['pairs'] != null),
         email: EmailPrefs.fromJson((j['email'] as Map?)?.cast<String, dynamic>() ?? {}),
       );
 
@@ -84,7 +90,8 @@ class NotificationPrefs {
         'signals': signals,
         'results': results,
         'reports': reports,
-        'pairs': pairs,
+        // Send a list only if the user picked one, so other settings never freeze the best markets.
+        'pairs': pairsChosen ? pairs : null,
         'email': email.toJson(),
       };
 
@@ -101,7 +108,9 @@ class NotificationPrefs {
         signals: signals ?? this.signals,
         results: results ?? this.results,
         reports: reports ?? this.reports,
+        // allPairs: go back to following the best recent markets (the server fills in the list).
         pairs: allPairs ? null : (pairs ?? this.pairs),
+        pairsChosen: allPairs ? false : (pairs != null ? true : pairsChosen),
         email: email ?? this.email,
       );
 }
@@ -336,7 +345,30 @@ class TradeSignal {
 class SignalPage {
   final List<TradeSignal> items;
   final bool hasMore;
-  const SignalPage(this.items, this.hasMore);
+  final MarketsScope? markets;
+  const SignalPage(this.items, this.hasMore, [this.markets]);
+}
+
+/// Which markets a signal list covers: the viewer's own ('mine') or every market ('all').
+/// [source] says where "mine" came from: 'chosen' by the user, 'best' recent markets, or the 'default' (gold).
+class MarketsScope {
+  final String mode;
+  final List<String> markets;
+  final String source;
+  final List<String> bestMarkets;
+  const MarketsScope({this.mode = 'mine', this.markets = const [], this.source = 'best', this.bestMarkets = const []});
+
+  bool get all => mode == 'all';
+
+  factory MarketsScope.fromJson(Map<String, dynamic> j) {
+    List<String> l(dynamic v) => ((v as List?) ?? const []).map((e) => '$e').toList();
+    return MarketsScope(
+      mode: j['mode'] as String? ?? 'mine',
+      markets: l(j['markets']),
+      source: j['source'] as String? ?? 'best',
+      bestMarkets: l(j['best_markets']),
+    );
+  }
 }
 
 class PairStat {

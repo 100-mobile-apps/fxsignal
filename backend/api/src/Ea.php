@@ -40,7 +40,8 @@ final class Ea
     {
         $u = self::userByKey();
         $strategy = MarketRank::effectiveStrategy($u['strategy'] ?? null);
-        $pairs = default_pairs();
+        // Same markets as the user's Signals tab and alerts, unless the bot asks for specific ones.
+        $pairs = user_pairs($u);
         if (!empty($_GET['pairs'])) {
             $want = array_filter(array_map('trim', explode(',', (string) $_GET['pairs'])));
             $pairs = array_values(array_intersect(config('pairs'), $want));

@@ -61,6 +61,11 @@ final class Signals
         if (!empty($_GET['pair'])) {
             $where .= ' AND pair = ?';
             $params[] = (string) $_GET['pair'];
+            $scope = markets_scope($u)[2];
+        } else {
+            [$sql, $p, $scope] = markets_scope($u);
+            $where .= $sql;
+            array_push($params, ...$p);
         }
         $order = $status === 'closed' ? 'closed_at DESC, id DESC' : 'opened_at DESC, id DESC';
         $offset = ($page - 1) * $per;
@@ -70,6 +75,7 @@ final class Signals
             'items' => array_map([self::class, 'format'], array_slice($rows, 0, $per)),
             'page' => $page,
             'has_more' => $hasMore,
+            'markets' => $scope,
         ]);
     }
 

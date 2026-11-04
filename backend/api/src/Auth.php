@@ -33,7 +33,9 @@ final class Auth
                 'signals' => (bool) $u['notify_signals'],
                 'results' => (bool) $u['notify_results'],
                 'reports' => (bool) $u['notify_reports'],
-                'pairs' => $u['notify_pairs'] ? json_decode($u['notify_pairs'], true) : default_pairs(),
+                'pairs' => user_pairs($u),
+                // false: the user follows the best recent markets, which change as results come in.
+                'pairs_chosen' => user_pairs_source($u) === 'chosen',
                 'email' => [
                     'signals' => (bool) $u['email_signals'],
                     'results' => (bool) $u['email_results'],

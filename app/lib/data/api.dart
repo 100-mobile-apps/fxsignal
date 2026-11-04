@@ -32,11 +32,12 @@ abstract class Api {
   Future<AppUser> updateNotifications(NotificationPrefs prefs);
   Future<AppUser> updateWatchlist(List<String> symbols);
 
+  /// [allMarkets] false returns only the viewer's markets (their choice, else the best 3 right now).
   Future<SignalPage> signals(
-      {required bool running, int page = 1, DateTime? from, DateTime? to});
+      {required bool running, int page = 1, DateTime? from, DateTime? to, bool allMarkets = false});
   Future<ReportsData> reports(String period);
   Future<TradeSignal> signal(int id);
-  Future<Stats> stats(int days);
+  Future<Stats> stats(int days, {bool allMarkets = false});
   Future<List<PriceQuote>> prices();
 
   /// Dollars and pips at an account size and risk. Only available against the live server.

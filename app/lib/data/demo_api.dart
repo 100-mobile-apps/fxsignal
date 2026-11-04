@@ -299,13 +299,16 @@ class DemoApi extends Api {
     return result;
   }
 
+  static const _demoBest = ['XAU/USD', 'USD/CAD', 'GBP/USD'];
+
   @override
   Future<SignalPage> signals(
-      {required bool running, int page = 1, DateTime? from, DateTime? to}) async {
+      {required bool running, int page = 1, DateTime? from, DateTime? to, bool allMarkets = false}) async {
     await _delay();
     final list = _all
         .where((s) =>
             s.isRunning == running &&
+            (allMarkets || _demoBest.contains(s.pair)) &&
             (from == null || !s.closedAt!.isBefore(from)) &&
             (to == null || s.closedAt!.isBefore(to)))
         .toList()
@@ -314,9 +317,11 @@ class DemoApi extends Api {
           : b.closedAt!.compareTo(a.closedAt!));
     const per = 20;
     final start = (page - 1) * per;
-    if (start >= list.length) return const SignalPage([], false);
+    final scope = MarketsScope(
+        mode: allMarkets ? 'all' : 'mine', markets: _demoBest, source: 'best', bestMarkets: _demoBest);
+    if (start >= list.length) return SignalPage(const [], false, scope);
     final end = math.min(start + per, list.length);
-    return SignalPage(list.sublist(start, end), end < list.length);
+    return SignalPage(list.sublist(start, end), end < list.length, scope);
   }
 
   @override
@@ -371,14 +376,14 @@ class DemoApi extends Api {
   }
 
   @override
-  Future<Stats> stats(int days) async {
+  Future<Stats> stats(int days, {bool allMarkets = false}) async {
     await _delay();
     final since = DateTime.now().subtract(Duration(days: days));
     final closed = _all
-        .where((s) => !s.isRunning && (days == 0 || s.closedAt!.isAfter(since)))
+        .where((s) => !s.isRunning && (allMarkets || _demoBest.contains(s.pair)) && (days == 0 || s.closedAt!.isAfter(since)))
         .toList()
       ..sort((a, b) => a.closedAt!.compareTo(b.closedAt!));
-    return computeStats(closed, _all.where((s) => s.isRunning).length, days);
+    return computeStats(closed, _all.where((s) => s.isRunning && (allMarkets || _demoBest.contains(s.pair))).length, days);
   }
 
   @override
