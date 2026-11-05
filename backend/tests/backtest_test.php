@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/backtest.php';
 require_once __DIR__ . '/../api/src/Cron.php';
+if (!function_exists('config')) { function config(string $key, $default = null) { return $default; } }
 
 function check(bool $condition, string $message): void
 {
@@ -34,11 +35,11 @@ check(!TradingPolicy::canPublish(strtotime('2024-01-20T12:00:00Z')), 'Saturday i
 check(!TradingPolicy::canPublish(strtotime('2024-01-21T23:59:00Z')), 'Sunday is paused');
 check(TradingPolicy::canPublish(strtotime('2024-01-22T00:00:00Z')), 'Monday resumes publication');
 $publish = new ReflectionMethod(Cron::class, 'maybeOpen');
-check(str_contains($publish->invoke(null, 'EUR/USD', '1h', 3600, [], [],
+check(str_contains($publish->invoke(null, 'EUR/USD', 'classic', false, '1h', 3600, [], [],
     strtotime('2024-01-20T12:00:00Z')), 'weekend'),
     'Cron must reject weekend publication before DB access or notification');
 $oldQuote = [['t' => strtotime('2024-01-22T13:00:00Z'), 'c' => 1.1]];
-check(str_contains($publish->invoke(null, 'EUR/USD', '1h', 3600, $oldQuote, $oldQuote,
+check(str_contains($publish->invoke(null, 'EUR/USD', 'classic', false, '1h', 3600, $oldQuote, $oldQuote,
     strtotime('2024-01-22T15:20:00Z')), 'no fresh forming-candle'),
     'Cron must not reuse the analyzed closed candle as a fresh live entry');
 check(TradingPolicy::freshFormingQuote(strtotime('2024-01-22T15:00:00Z'), 3600,

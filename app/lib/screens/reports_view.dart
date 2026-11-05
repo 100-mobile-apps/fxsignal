@@ -282,7 +282,9 @@ class _ReportPeriodScreenState extends State<ReportPeriodScreen> {
     setState(() => _loading = true);
     try {
       final p = await context.read<Api>().signals(
-          running: false, page: _page + 1, from: widget.row.start, to: widget.row.end);
+          running: false, page: _page + 1, from: widget.row.start, to: widget.row.end,
+          // Reports total every market, so the trades behind them do too.
+          allMarkets: true);
       if (!mounted) return;
       setState(() {
         _page++;

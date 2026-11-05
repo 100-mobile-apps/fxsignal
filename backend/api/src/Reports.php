@@ -81,10 +81,10 @@ final class Reports
         $end = self::next($period, $start);
         $closed = Db::all(
             "SELECT id, pair, direction, entry, stop_loss, tp1, tp2, result, pips, closed_at FROM signals
-             WHERE status = 'closed' AND closed_at >= ? AND closed_at < ? ORDER BY closed_at",
+             WHERE status = 'closed' AND published = 1" . Strategies::scopeSql() . " AND closed_at >= ? AND closed_at < ? ORDER BY closed_at",
             [self::utc($start), self::utc($end)]
         );
-        $opened = (int) Db::one('SELECT COUNT(*) AS n FROM signals WHERE opened_at >= ? AND opened_at < ?',
+        $opened = (int) Db::one('SELECT COUNT(*) AS n FROM signals WHERE published = 1' . Strategies::scopeSql() . ' AND opened_at >= ? AND opened_at < ?',
             [self::utc($start), self::utc($end)])['n'];
         $row = self::emptyRow($period, $start);
         $row['opened'] = $opened;
@@ -121,9 +121,9 @@ final class Reports
         $oldest = end($starts);
         $rangeEnd = self::next($period, $starts[0]);
 
-        $closed = Db::all("SELECT id, pair, pips, closed_at FROM signals WHERE status = 'closed' AND closed_at >= ? AND closed_at < ?",
+        $closed = Db::all("SELECT id, pair, pips, closed_at FROM signals WHERE status = 'closed' AND published = 1" . Strategies::scopeSql() . " AND closed_at >= ? AND closed_at < ?",
             [self::utc($oldest), self::utc($rangeEnd)]);
-        $opened = Db::all('SELECT opened_at FROM signals WHERE opened_at >= ? AND opened_at < ?',
+        $opened = Db::all('SELECT opened_at FROM signals WHERE published = 1' . Strategies::scopeSql() . ' AND opened_at >= ? AND opened_at < ?',
             [self::utc($oldest), self::utc($rangeEnd)]);
 
         $rows = [];
@@ -153,7 +153,7 @@ final class Reports
         }
         $all = Db::one("SELECT COUNT(*) AS closed, SUM(CASE WHEN pips > 0 THEN 1 ELSE 0 END) AS wins,
             SUM(CASE WHEN pips < 0 THEN 1 ELSE 0 END) AS losses, COALESCE(SUM(pips), 0) AS pips, MIN(opened_at) AS since
-            FROM signals WHERE status = 'closed'");
+            FROM signals WHERE status = 'closed' AND published = 1" . Strategies::scopeSql());
         $closedAll = (int) $all['closed'];
         $out['all'] = [
             'closed' => $closedAll,
@@ -163,13 +163,14 @@ final class Reports
             'win_rate' => $closedAll ? round((int) $all['wins'] * 100 / $closedAll, 1) : 0.0,
             'since' => iso($all['since']),
         ];
-        $out['running'] = (int) Db::one("SELECT COUNT(*) AS n FROM signals WHERE status = 'running'")['n'];
+        $out['running'] = (int) Db::one("SELECT COUNT(*) AS n FROM signals WHERE status = 'running' AND published = 1" . Strategies::scopeSql())['n'];
         return $out;
     }
 
     public static function show(): void
     {
-        Auth::user();
+        $u = Auth::user();
+        Strategies::setScope(MarketRank::effectiveStrategy($u['strategy'] ?? null));
         $period = (string) ($_GET['period'] ?? 'daily');
         if (!in_array($period, self::PERIODS, true)) throw new ApiError('period must be daily, weekly or monthly', 422);
         $limit = max(1, min(60, (int) ($_GET['limit'] ?? ($period === 'monthly' ? 12 : ($period === 'weekly' ? 12 : 20)))));
@@ -206,10 +207,21 @@ final class Reports
             $metaKey = "report_$period";
             $done = Db::one('SELECT v FROM meta WHERE k = ?', [$metaKey]);
             if ($done && $done['v'] === $key) continue;
-            Db::exec('DELETE FROM meta WHERE k = ?', [$metaKey]);
-            Db::exec('INSERT INTO meta (k, v) VALUES (?, ?)', [$metaKey, $key]);
-            [$row, $signals] = self::window($period, $start);
-            $n = Notify::report($period, $row, $signals, self::summary($nowTs));
+            // Queue the report emails and mark the report as sent in one transaction, so a failure part-way
+            // leaves it unsent (retried next run) instead of marked sent with nothing queued.
+            $pdo = Db::pdo();
+            $pdo->beginTransaction();
+            try {
+                [$row, $signals] = self::window($period, $start);
+                $n = Notify::report($period, $row, $signals, self::summary($nowTs));
+                Db::exec('DELETE FROM meta WHERE k = ?', [$metaKey]);
+                Db::exec('INSERT INTO meta (k, v) VALUES (?, ?)', [$metaKey, $key]);
+                $pdo->commit();
+            } catch (Throwable $e) {
+                $pdo->rollBack();
+                $log[] = "report $period: not sent, will retry ({$e->getMessage()})";
+                continue;
+            }
             $log[] = "report $period {$row['label']}: {$row['wins']}W/{$row['losses']}L {$row['pips']} pips, queued $n emails";
         }
         return $log;

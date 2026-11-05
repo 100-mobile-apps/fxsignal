@@ -9,6 +9,9 @@ import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/signal_card.dart';
 import 'legal_screen.dart';
+import 'bot_screen.dart';
+import 'gold_test_screen.dart';
+import 'money_screen.dart';
 import 'reports_view.dart';
 import 'signals_screen.dart';
 
@@ -99,6 +102,72 @@ class _Overview extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
           children: [
             const DemoBanner(),
+            GlassCard(
+              borderColor: AppColors.gold.withValues(alpha: 0.5),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MoneyScreen())),
+              child: Row(
+                children: [
+                  const Icon(Icons.payments_outlined, color: AppColors.gold),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Your money', style: AppText.title),
+                        SizedBox(height: 2),
+                        Text('See what these signals would have made in dollars for your account size and risk, and pick your strategy.',
+                            style: AppText.caption),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: AppColors.text3),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            GlassCard(
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GoldTestScreen())),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified_outlined, color: AppColors.gold),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Gold live test', style: AppText.title),
+                        SizedBox(height: 2),
+                        Text('Real gold signals judged against pass marks set in advance. See how it is going.',
+                            style: AppText.caption),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.text3),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            GlassCard(
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BotScreen())),
+              child: const Row(
+                children: [
+                  Icon(Icons.smart_toy_outlined, color: AppColors.gold),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Auto-trade bot', style: AppText.title),
+                        SizedBox(height: 2),
+                        Text('Let a free MetaTrader 5 robot place every signal for you, so you never miss one.', style: AppText.caption),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.text3),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             Row(
               children: [
                 for (final p in _periods)

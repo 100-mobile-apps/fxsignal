@@ -17,8 +17,13 @@ CREATE TABLE IF NOT EXISTS users (
   email_weekly TINYINT(1) NOT NULL DEFAULT 1,
   email_monthly TINYINT(1) NOT NULL DEFAULT 1,
   watchlist TEXT NULL,
+  strategy VARCHAR(16) NULL,
+  account_size DOUBLE NULL,
+  risk_pct DOUBLE NULL,
+  ea_key CHAR(32) NULL,
   created_at DATETIME NOT NULL,
-  last_login_at DATETIME NULL
+  last_login_at DATETIME NULL,
+  INDEX (ea_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- One-time 6-digit codes for email verification and password reset
@@ -37,6 +42,8 @@ CREATE TABLE IF NOT EXISTS password_resets (
 CREATE TABLE IF NOT EXISTS signals (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   pair VARCHAR(10) NOT NULL,
+  strategy VARCHAR(16) NOT NULL DEFAULT 'classic',
+  published TINYINT(1) NOT NULL DEFAULT 1,
   timeframe VARCHAR(10) NOT NULL,
   direction VARCHAR(4) NOT NULL,
   entry DOUBLE NOT NULL,
@@ -50,6 +57,7 @@ CREATE TABLE IF NOT EXISTS signals (
   status VARCHAR(10) NOT NULL DEFAULT 'running',
   result VARCHAR(10) NULL,
   tp1_hit_at DATETIME NULL,
+  lock_hit_at DATETIME NULL,
   closed_at DATETIME NULL,
   close_price DOUBLE NULL,
   pips DOUBLE NULL,

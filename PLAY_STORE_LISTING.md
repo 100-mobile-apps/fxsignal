@@ -26,26 +26,28 @@ If you still decide to take the risk, the version that fits is `Free Forex Signa
 Free forex & gold signals with entry, stop loss & take profit. Live alerts.
 ```
 
-## Full description — 2,541 / 4,000 characters
+## Full description — 3,204 / 4,000 characters
 ```
-Get free forex signals and gold signals with a clear trade plan: entry price, stop loss and two take profit targets for every signal. Forex Signals Live scans the major currency pairs and gold (XAU/USD) around the clock and alerts you the moment a new buy or sell signal is published.
+Get free gold signals and forex signals with a clear trade plan: entry price, stop loss and two take profit targets for every signal. Forex Signals Live scans gold (XAU/USD) and the major currency pairs around the clock and alerts you the moment a new buy or sell signal is published. Gold is the default market; you can follow any of the others too.
 
 WHAT YOU GET
 • Free forex signals for EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF, NZD/USD and gold (XAU/USD)
 • Buy and sell signals with entry, stop loss (SL), take profit 1 and take profit 2 (TP1, TP2)
 • Instant push notifications and email alerts for new signals
-• Trade updates when TP1, TP2 or the stop loss is hit
+• Trade updates when TP1, TP2 or the stop loss is hit, and when the stop should be moved
+• Every signal in dollars for your own account size and risk, not just pips
 • Live chart for every signal with risk and reward zones
 • Signal strength score and the reasons behind each trade
 • Daily, weekly and monthly performance reports
 
 A TRACK RECORD YOU CAN CHECK
-Every signal is recorded automatically and closed by fixed rules, win or loss. Nothing is edited or deleted. See the win rate, total pips, profit factor and growth curve, and open any day, week or month to see every trade in it.
+Every signal is recorded automatically and closed by fixed rules, win or loss. Results count every losing trade and include trading costs (the spread), in dollars and pips. Some markets have lost money over the record so far, and the app shows that too. Open any day, week or month to see every trade in it.
 
 HOW THE SIGNALS WORK
-Signals come from technical analysis on the 1-hour chart: the 200 EMA trend, the 20 and 50 EMA, MACD momentum and RSI. Only setups with a strong score are published. The stop loss and take profit levels are based on ATR (average true range), so they adapt to how much the market is moving. The full method is explained inside the app.
+Signals come from technical analysis on the 1-hour chart. The main method uses the 200 EMA trend, the 20 and 50 EMA, MACD momentum and RSI, and only publishes setups with a strong score. Stop loss and take profit levels are based on ATR (average true range), so they adapt to how much the market is moving. Each signal is traded as two halves: one closes at TP1, the other runs to TP2 with its stop moved to entry. Other methods can be chosen in the app; each shows its own live record. The full method is explained inside the app.
 
 TRADING TOOLS
+• Your money: set your account size and risk per trade (1% by default) and see what each signal would make or lose in dollars, with the largest drop shown for higher risk settings
 • Lot size calculator: position size from your balance, risk % and stop loss
 • Pip value calculator for every pair and gold
 • Forex market sessions: see when Sydney, Tokyo, London and New York are open
@@ -86,6 +88,8 @@ Questions, feedback or a custom app for your business: swalafblog@gmail.com
 | Icon | 512x512 PNG | `store-assets/play-icon.png`; rendered from the app's actual `LogoMark` widget, with matching Android mipmap launcher resources. |
 | Feature graphic | 1024x500 PNG | `store-assets/feature-graphic.png` (editable SVG alongside it); illustrated BUY card and the requested headline. |
 | Screenshot previews | 1080x1920 PNG | `store-assets/screenshots/01-signals.png` through `07-markets.png`. |
+
+**Out of date (Nov 2026):** these were captured before the Your money screen, dollar figures on signals and the strategy picker. Recapture from the new build before or with the next release.
 
 The seven screenshots are **illustrative demo captures** from the Flutter UI,
 not the uploaded live AAB. Their captions say so; prices, win rates and pips

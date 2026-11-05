@@ -5,11 +5,11 @@ import 'package:provider/provider.dart';
 import '../services/developer.dart';
 import '../state/data_stores.dart';
 import '../widgets/developer_widgets.dart';
+import 'bot_screen.dart';
 import 'markets_screen.dart';
 import 'profile_screens.dart';
 import 'results_screen.dart';
 import 'signals_screen.dart';
-import 'tools_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -81,7 +81,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           SignalsScreen(onSeeResults: () => goToTab(1)),
           const ResultsScreen(),
           const MarketsScreen(),
-          const ToolsScreen(),
+          const BotScreen(),
           const ProfileScreen(),
         ],
       ),
@@ -106,9 +106,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 selectedIcon: Icon(Icons.show_chart_rounded),
                 label: 'Markets'),
             NavigationDestination(
-                icon: Icon(Icons.calculate_outlined),
-                selectedIcon: Icon(Icons.calculate_rounded),
-                label: 'Tools'),
+                icon: Icon(Icons.smart_toy_outlined),
+                selectedIcon: Icon(Icons.smart_toy_rounded),
+                label: 'Bot'),
             NavigationDestination(
                 icon: Icon(Icons.person_outline_rounded),
                 selectedIcon: Icon(Icons.person_rounded),

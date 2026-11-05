@@ -27,7 +27,7 @@ class SessionStore extends ChangeNotifier {
   AppUser? user;
 
   Future<void> _syncDelivery(AppUser account) async {
-    final topicsReady = await push.sync(account.notifications);
+    final topicsReady = await push.sync(account.notifications, strategy: account.prefs.strategy);
     var permissionGranted = false;
     if (topicsReady) {
       try {
@@ -135,6 +135,28 @@ class SessionStore extends ChangeNotifier {
         setUser(previous);
         await _cacheUser(previous);
       }
+      rethrow;
+    }
+  }
+
+  /// Saves strategy / account size / risk. Pass [setStrategy] true to change the strategy (null = always the best one).
+  Future<void> updatePreferences(
+      {String? strategy, bool setStrategy = false, double? accountSize, double? riskPct}) async {
+    final u = user;
+    if (u == null) return;
+    final next = u.prefs.copyWith(
+      strategy: setStrategy && strategy != null ? strategy : u.prefs.strategy,
+      strategyChosen: setStrategy ? strategy != null : u.prefs.strategyChosen,
+      accountSize: accountSize,
+      riskPct: riskPct,
+    );
+    setUser(u.copyWith(prefs: next));
+    try {
+      setUser(await api.updatePreferences(
+          strategy: strategy, setStrategy: setStrategy, accountSize: accountSize, riskPct: riskPct));
+      if (setStrategy) await _syncDelivery(user!);
+    } catch (_) {
+      setUser(u);
       rethrow;
     }
   }
