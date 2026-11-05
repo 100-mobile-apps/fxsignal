@@ -73,6 +73,15 @@ void main() {
     expect(find.textContaining('stay free'), findsOneWidget);
   });
 
+  testWidgets('before the first trade the pass marks show dashes, not red zeros', (tester) async {
+    final j = sample(trades: 0);
+    for (final c in (j['checks'] as List)) { (c as Map)['value'] = 0; c['ok'] = false; }
+    await pumpScreen(tester, FakeGoldApi(j));
+    expect(tester.takeException(), isNull);
+    expect(find.text('—'), findsNWidgets(3));
+    expect(find.text('0.00'), findsNothing);
+  });
+
   testWidgets('without the live server it explains instead of crashing', (tester) async {
     await pumpScreen(tester, DemoApi());
     expect(tester.takeException(), isNull);

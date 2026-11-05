@@ -70,7 +70,7 @@ class _GoldTestScreenState extends State<GoldTestScreen> {
                   children: [
                     for (var i = 0; i < d.checks.length; i++) ...[
                       if (i > 0) const Divider(height: 1),
-                      _CheckRow(c: d.checks[i], riskPct: d.riskPct),
+                      _CheckRow(c: d.checks[i], riskPct: d.riskPct, started: d.trades > 0),
                     ],
                   ],
                 ),
@@ -196,12 +196,15 @@ class _StatusCard extends StatelessWidget {
 class _CheckRow extends StatelessWidget {
   final GoldCheck c;
   final double riskPct;
-  const _CheckRow({required this.c, required this.riskPct});
+  final bool started;
+  const _CheckRow({required this.c, required this.riskPct, required this.started});
 
   @override
   Widget build(BuildContext context) {
     final String value;
-    if (c.value == null) {
+    if (!started) {
+      value = '—';
+    } else if (c.value == null) {
       value = c.key == 'profit_factor' ? 'No losses yet' : '—';
     } else if (c.unit == '%') {
       value = '${c.key == 'profit' && c.value! > 0 ? '+' : ''}${c.value!.toStringAsFixed(1)}%';
@@ -224,8 +227,11 @@ class _CheckRow extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(value, style: TextStyle(fontWeight: FontWeight.w800, color: c.ok ? AppColors.buy : AppColors.sell)),
-              if (c.pips != null) Text('${Fmt.pips(c.pips)} pips', style: AppText.caption),
+              Text(value,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: !started ? AppColors.text2 : (c.ok ? AppColors.buy : AppColors.sell))),
+              if (c.pips != null && started) Text('${Fmt.pips(c.pips)} pips', style: AppText.caption),
             ],
           ),
         ],
