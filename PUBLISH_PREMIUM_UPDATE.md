@@ -1,5 +1,7 @@
 # Publishing the Premium update (v1.1.0, build 5)
 
+> **Status (10 Nov 2026):** server updated by Claude on forexsignal.bulksend.top. Both code copies were updated: `api/`, which the app uses, and the top level, which cron runs. The database is migrated. Settings live in `src/config.premium.php` in both copies, and the lock is off (`premium_enforced` false). A backup is in `backup-20261110-premium/`. The Google key goes to `api/src/play-service-account.json`, which both copies use.
+
 Do the parts **in this order**. The server goes first, with locking off, so old app versions keep working. The app goes second. Locking turns on only on launch day (Part 4, step 9).
 
 ---
