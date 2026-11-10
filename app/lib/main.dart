@@ -15,6 +15,7 @@ import 'services/developer.dart';
 import 'services/background_signal_service.dart';
 import 'services/push_service.dart';
 import 'services/review_service.dart';
+import 'state/billing_store.dart';
 import 'state/data_stores.dart';
 import 'state/session_store.dart';
 
@@ -40,6 +41,8 @@ Future<void> main() async {
   final signals = SignalsStore(api);
   final stats = StatsStore(api);
   final market = MarketStore(api);
+  final billing = BillingStore(api, session);
+  var billingStarted = false;
 
   void onUnauthorized() {
     if (session.status == SessionStatus.loggedIn) session.logout();
@@ -83,6 +86,11 @@ Future<void> main() async {
   };
 
   session.addListener(() {
+    // Start Google Play billing once logged in, so purchases can be verified for this account.
+    if (session.status == SessionStatus.loggedIn && !billingStarted) {
+      billingStarted = true;
+      billing.init();
+    }
     if (session.status != SessionStatus.loggedIn) {
       signals.clear();
       stats.clear();
@@ -109,6 +117,7 @@ Future<void> main() async {
       ChangeNotifierProvider.value(value: signals),
       ChangeNotifierProvider.value(value: stats),
       ChangeNotifierProvider.value(value: market),
+      ChangeNotifierProvider.value(value: billing),
     ],
     child: const FxSignalsApp(),
   ));

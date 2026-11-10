@@ -21,12 +21,13 @@ return [
     // Instruments and timeframe the engine watches.
     // Eight pairs every 20 minutes request roughly 576 series/day before retries or other usage.
     'pairs' => ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF', 'NZD/USD', 'XAU/USD'],
-    'timeframe' => '1h',
+    // Strategy v2 is built and tested for 4-hour candles.
+    'timeframe' => '4h',
 
     // Signal rules
     'min_confidence' => 65,       // minimum strength (0–100) to publish a signal
     'max_entry_drift_atr' => 0.5, // reject a live entry >0.5 ATR from the confirmed closed candle
-    'signal_expiry_hours' => 72,  // open signals are closed at market after this
+    'signal_expiry_hours' => 120, // open signals are closed at market after this (5 days on 4h)
     'cooldown_hours' => 4,        // wait after a signal closes before a new one on that pair
 
     // Push notifications (optional). Firebase console → Project settings → Service accounts →
@@ -35,6 +36,21 @@ return [
         'project_id' => '',
         'service_account_file' => __DIR__ . '/firebase-service-account.json',
     ],
+
+    // Premium subscriptions (Google Play Billing). See PUBLISH_PREMIUM_UPDATE.md.
+    // Play Console → Users and permissions → invite the service account's email with
+    // "View financial data" + "Manage orders and subscriptions". Upload its JSON key next to this file.
+    'play' => [
+        'package_name' => 'com.forexsignalslive.forex_signals',
+        'service_account_file' => __DIR__ . '/play-service-account.json',
+        'products' => ['fx_premium_monthly', 'fx_premium_yearly'],
+        // Long random string; the Pub/Sub push URL is https://yourdomain.com/api/billing/rtdn?secret=THIS_VALUE
+        'rtdn_secret' => '',
+    ],
+    // Accounts that get Premium free (you, testers, the Google Play reviewer account).
+    'premium_emails' => [],
+    // App builds older than this are asked to update before they can open live signals.
+    'min_app_build' => 5,
 
     // Public URL of this API (used for unsubscribe links in emails)
     'base_url' => 'https://yourdomain.com/api',

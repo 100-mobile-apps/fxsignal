@@ -11,6 +11,7 @@ import '../widgets/common.dart';
 import '../widgets/signal_card.dart';
 import '../services/review_service.dart';
 import 'legal_screen.dart';
+import 'paywall_screen.dart';
 import 'tools_screen.dart';
 
 class SignalDetailScreen extends StatefulWidget {
@@ -31,10 +32,26 @@ class _SignalDetailScreenState extends State<SignalDetailScreen> {
     _load();
   }
 
+  bool _paywallShown = false;
+
+  Future<void> _unlock() async {
+    final unlocked = await openPaywall(context);
+    if (unlocked && mounted) {
+      setState(() => _s = null);
+      await _load();
+    }
+  }
+
   Future<void> _load() async {
     try {
       final s = await context.read<Api>().signal(widget.signalId);
       if (mounted) setState(() => _s = s);
+      // Opened from a notification without a subscription: go straight to the paywall once.
+      if (s.locked && !_paywallShown && mounted) {
+        _paywallShown = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _unlock());
+        return;
+      }
       // A good moment to ask for a rating: the user is looking at a winning trade.
       if (!s.isRunning && s.isWin) {
         Future.delayed(const Duration(seconds: 2), ReviewService.maybeAsk);
@@ -61,7 +78,7 @@ class _SignalDetailScreenState extends State<SignalDetailScreen> {
       appBar: AppBar(
         title: Text(s == null ? 'Signal' : '${s.pair} · ${s.timeframeLabel}'),
         actions: [
-          if (s != null)
+          if (s != null && !s.locked)
             IconButton(
               tooltip: 'Copy levels',
               icon: const Icon(Icons.copy_all_rounded),
@@ -69,7 +86,9 @@ class _SignalDetailScreenState extends State<SignalDetailScreen> {
             ),
         ],
       ),
-      body: s == null
+      body: s != null && s.locked
+          ? _LockedSignal(s: s, onUnlock: _unlock)
+          : s == null
           ? Center(
               child: _error != null
                   ? EmptyState(
@@ -426,6 +445,57 @@ class _Analysis extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Shown instead of the levels when a live signal is opened without a subscription.
+class _LockedSignal extends StatelessWidget {
+  final TradeSignal s;
+  final VoidCallback onUnlock;
+  const _LockedSignal({required this.s, required this.onUnlock});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        GlassCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(children: [
+                PairAvatar(pair: s.pair, size: 44),
+                const SizedBox(width: 12),
+                Text(s.pair, style: AppText.h2),
+                const SizedBox(width: 8),
+                DirectionPill(isBuy: s.isBuy),
+                const Spacer(),
+                Text('${s.confidence}%', style: AppText.mono(16, color: AppColors.gold)),
+              ]),
+              const SizedBox(height: 24),
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.35)),
+                ),
+                child: const Icon(Icons.lock_rounded, color: AppColors.gold),
+              ),
+              const SizedBox(height: 14),
+              const Text('This live signal is for Premium members',
+                  textAlign: TextAlign.center, style: AppText.title),
+              const SizedBox(height: 6),
+              const Text('Subscribe to see the entry, stop loss, TP1, TP2 and the live chart levels.',
+                  textAlign: TextAlign.center, style: AppText.body),
+              const SizedBox(height: 18),
+              GoldButton(label: 'Unlock live signals', icon: Icons.workspace_premium_rounded, onPressed: onUnlock),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

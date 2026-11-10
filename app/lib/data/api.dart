@@ -40,4 +40,12 @@ abstract class Api {
 
   /// Which developer links to show (server-controlled). Keys: coffee, whatsapp, hire.
   Future<Map<String, bool>> promo();
+
+  /// Sends a Google Play purchase to the server, which checks it with Google
+  /// and returns the account with premium switched on.
+  Future<AppUser> verifyPurchase(String productId, String purchaseToken);
+
+  /// Registers this phone's push token so premium alerts with full levels reach it.
+  Future<void> registerDevice(String pushToken);
+  Future<void> unregisterDevice(String pushToken);
 }

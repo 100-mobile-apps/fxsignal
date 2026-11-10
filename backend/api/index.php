@@ -4,7 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/src/bootstrap.php';
 
 header('Access-Control-Allow-Origin: ' . config('cors_origin', '*'));
-header('Access-Control-Allow-Headers: Authorization, Content-Type');
+header('Access-Control-Allow-Headers: Authorization, Content-Type, X-App-Build');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('X-Content-Type-Options: nosniff');
 
@@ -34,6 +34,10 @@ $routes = [
     ['PUT', '#^/me/password$#', fn() => Account::changePassword()],
     ['PUT', '#^/me/notifications$#', fn() => Account::notifications()],
     ['PUT', '#^/me/watchlist$#', fn() => Account::watchlist()],
+    ['PUT', '#^/me/device$#', fn() => Billing::saveDevice()],
+    ['DELETE', '#^/me/device$#', fn() => Billing::deleteDevice()],
+    ['POST', '#^/billing/verify$#', fn() => Billing::verify()],
+    ['POST', '#^/billing/rtdn$#', fn() => Billing::rtdn()],
     ['GET', '#^/signals$#', fn() => Signals::list()],
     ['GET', '#^/signals/(?P<id>\d+)$#', fn($p) => Signals::show($p)],
     ['GET', '#^/stats$#', fn() => Stats::show()],

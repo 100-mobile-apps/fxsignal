@@ -39,6 +39,9 @@ final class Account
             throw new ApiError('Password is incorrect.', 400);
         }
         Db::exec('DELETE FROM password_resets WHERE user_id = ?', [$u['id']]);
+        Db::exec('DELETE FROM devices WHERE user_id = ?', [$u['id']]);
+        // Subscription rows stay (anonymised) so a deleted account's Play token cannot be re-linked to someone else.
+        Db::exec('UPDATE subscriptions SET user_id = 0 WHERE user_id = ?', [$u['id']]);
         Db::exec('DELETE FROM users WHERE id = ?', [$u['id']]);
         Http::send(['ok' => true]);
     }

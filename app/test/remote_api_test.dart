@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:forex_signals/core/config.dart';
 import 'package:forex_signals/data/api.dart';
 import 'package:forex_signals/data/remote_api.dart';
 import 'package:http/http.dart' as http;
@@ -87,5 +90,47 @@ void main() {
           (e) => e.message, 'challenge redirect', contains('api.example.com/security-challenge'))),
     );
     expect(requests, 1);
+  });
+
+  test('sends the app build so the server can tell new apps from old ones', () async {
+    String? build;
+    final client = MockClient((request) async {
+      build = request.headers['X-App-Build'];
+      return http.Response('{"promo":{}}', 200);
+    });
+    addTearDown(client.close);
+    await RemoteApi('https://api.example.com', client: client).promo();
+    expect(build, '${AppConfig.build}');
+  });
+
+  test('parses a locked live signal without levels', () async {
+    final client = MockClient((request) async => http.Response(
+        '{"items":[{"id":7,"pair":"EUR/USD","timeframe":"4h","direction":"BUY","entry":null,'
+        '"stop_loss":null,"tp1":null,"tp2":null,"confidence":78,"reasons":[],"status":"running",'
+        '"result":null,"tp1_hit_at":null,"opened_at":"2026-11-10T08:00:00Z","expires_at":null,'
+        '"closed_at":null,"close_price":null,"pips":null,"current_price":1.085,"live_pips":null,'
+        '"updated_at":null,"locked":true}],"page":1,"has_more":false}', 200));
+    addTearDown(client.close);
+    final page = await RemoteApi('https://api.example.com', client: client).signals(running: true);
+    expect(page.items.single.locked, true);
+    expect(page.items.single.entry, 0);
+    expect(page.items.single.direction, 'BUY');
+  });
+
+  test('sends the purchase to the server for verification', () async {
+    Map<String, dynamic>? sent;
+    final client = MockClient((request) async {
+      expect(request.url.path, '/billing/verify');
+      sent = (jsonDecode(request.body) as Map).cast<String, dynamic>();
+      return http.Response(
+          '{"user":{"id":1,"name":"A","email":"a@b.co","premium":true,"premium_plan":"yearly",'
+          '"premium_until":"2027-11-10T00:00:00Z","billing_account_id":"abc"}}', 200);
+    });
+    addTearDown(client.close);
+    final u = await RemoteApi('https://api.example.com', client: client)
+        .verifyPurchase(AppConfig.yearlyProduct, 'token-123');
+    expect(sent, {'product_id': 'fx_premium_yearly', 'purchase_token': 'token-123'});
+    expect(u.premium, true);
+    expect(u.premiumPlan, 'yearly');
   });
 }

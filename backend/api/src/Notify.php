@@ -9,7 +9,7 @@ final class Notify
     {
         $allowed = ['email_signals', 'email_results', 'email_daily', 'email_weekly', 'email_monthly'];
         if (!in_array($column, $allowed, true)) throw new InvalidArgumentException($column);
-        $rows = Db::all("SELECT id, name, email, notify_pairs FROM users WHERE email_verified_at IS NOT NULL AND $column = 1");
+        $rows = Db::all("SELECT id, name, email, notify_pairs, premium_until FROM users WHERE email_verified_at IS NOT NULL AND $column = 1");
         if ($pair === null) return $rows;
         return array_values(array_filter($rows, function ($u) use ($pair) {
             if (!$u['notify_pairs']) return true;
@@ -36,14 +36,27 @@ final class Notify
         $pair = $s['pair'];
         $f = fn($v) => number_format((float) $v, price_decimals($pair), '.', '');
         $emoji = $s['direction'] === 'BUY' ? '🟢' : '🔴';
+        $data = ['signal_id' => $s['id'], 'type' => 'signal'];
+
+        // Topic = every install that follows this pair, including free users and old app versions: teaser only.
         Fcm::sendToTopic('signals_' . topic_key($pair),
-            "$emoji {$s['direction']} $pair @ " . $f($s['entry']),
-            'SL ' . $f($s['stop_loss']) . ' · TP1 ' . $f($s['tp1']) . ' · TP2 ' . $f($s['tp2']) . " · {$s['confidence']}% strength",
-            ['signal_id' => $s['id'], 'type' => 'signal']);
+            "🔒 New {$s['direction']} signal on $pair",
+            "{$s['confidence']}% strength. Subscribe to see the entry, stop loss and take profit.",
+            $data + ['locked' => 1]);
+
+        // Verified premium devices get the full levels directly.
+        $title = "$emoji {$s['direction']} $pair @ " . $f($s['entry']);
+        $body = 'SL ' . $f($s['stop_loss']) . ' · TP1 ' . $f($s['tp1']) . ' · TP2 ' . $f($s['tp2']) . " · {$s['confidence']}% strength";
+        foreach (Billing::premiumDeviceTokens($pair) as $token) {
+            if (Fcm::sendToToken($token, $title, $body, $data) === Fcm::UNREGISTERED) Billing::dropDevice($token);
+        }
+
         $n = 0;
         foreach (self::recipients('email_signals', $pair) as $u) {
             $unsub = self::unsubscribeUrl((int) $u['id'], 'email_signals');
-            [$subj, $html, $text] = EmailTemplates::newSignal($s, $u['name'], $unsub);
+            [$subj, $html, $text] = Billing::isPremium($u)
+                ? EmailTemplates::newSignal($s, $u['name'], $unsub)
+                : EmailTemplates::lockedSignal($s, $u['name'], $unsub);
             Mailer::queue((int) $u['id'], $u['email'], $subj, $html, $text, $unsub);
             $n++;
         }
@@ -57,7 +70,7 @@ final class Notify
         $pips = (float) ($kind === 'tp1' ? $s['live_pips'] : $s['pips']);
         $pipsTxt = EmailTemplates::pips($pips) . ' pips';
         [$title, $body] = match ($kind) {
-            'tp1' => ["🎯 $pair TP1 hit $pipsTxt", 'Move your stop loss to entry (' . number_format((float) $s['entry'], price_decimals($pair), '.', '') . ') to lock in a risk-free trade.'],
+            'tp1' => ["🎯 $pair TP1 hit $pipsTxt", 'Move your stop loss to entry to lock in a risk-free trade.'],
             'tp2' => ["✅ $pair hit TP2 $pipsTxt", "Full target reached on the {$s['direction']} signal."],
             'sl' => ["❌ $pair stopped out $pipsTxt", 'Stop loss was hit. Stick to your risk plan.'],
             'tp1_close' => ["✅ $pair closed in profit $pipsTxt", 'TP1 was reached; the rest closed at break-even.'],

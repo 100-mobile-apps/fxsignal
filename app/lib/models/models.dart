@@ -1,6 +1,6 @@
 import '../core/format.dart';
 
-double _d(dynamic v) => (v as num).toDouble();
+double _d(dynamic v) => v == null ? 0.0 : (v as num).toDouble();
 double? _dn(dynamic v) => v == null ? null : (v as num).toDouble();
 DateTime? _t(dynamic v) => v == null ? null : DateTime.parse(v as String);
 
@@ -115,6 +115,14 @@ class AppUser {
   final NotificationPrefs notifications;
   final List<String> watchlist;
 
+  /// Verified by the server with Google Play. Only premium users get live levels.
+  final bool premium;
+  final DateTime? premiumUntil;
+  final String? premiumPlan;
+
+  /// Sent to Google Play at checkout so a purchase is tied to this account.
+  final String billingAccountId;
+
   const AppUser({
     required this.id,
     required this.name,
@@ -123,6 +131,10 @@ class AppUser {
     this.emailVerified = false,
     required this.notifications,
     required this.watchlist,
+    this.premium = false,
+    this.premiumUntil,
+    this.premiumPlan,
+    this.billingAccountId = '',
   });
 
   factory AppUser.fromJson(Map<String, dynamic> j) => AppUser(
@@ -134,6 +146,10 @@ class AppUser {
         notifications: NotificationPrefs.fromJson(
             (j['notifications'] as Map?)?.cast<String, dynamic>() ?? {}),
         watchlist: (j['watchlist'] as List?)?.cast<String>() ?? const [],
+        premium: j['premium'] as bool? ?? false,
+        premiumUntil: _t(j['premium_until']),
+        premiumPlan: j['premium_plan'] as String?,
+        billingAccountId: j['billing_account_id'] as String? ?? '',
       );
 
   Map<String, dynamic> toJson() => {
@@ -144,13 +160,18 @@ class AppUser {
         'email_verified': emailVerified,
         'notifications': notifications.toJson(),
         'watchlist': watchlist,
+        'premium': premium,
+        'premium_until': premiumUntil?.toIso8601String(),
+        'premium_plan': premiumPlan,
+        'billing_account_id': billingAccountId,
       };
 
   AppUser copyWith(
           {String? name,
           bool? emailVerified,
           NotificationPrefs? notifications,
-          List<String>? watchlist}) =>
+          List<String>? watchlist,
+          bool? premium}) =>
       AppUser(
         id: id,
         name: name ?? this.name,
@@ -159,6 +180,10 @@ class AppUser {
         emailVerified: emailVerified ?? this.emailVerified,
         notifications: notifications ?? this.notifications,
         watchlist: watchlist ?? this.watchlist,
+        premium: premium ?? this.premium,
+        premiumUntil: premiumUntil,
+        premiumPlan: premiumPlan,
+        billingAccountId: billingAccountId,
       );
 }
 
@@ -184,6 +209,9 @@ class TradeSignal {
   final double? livePips;
   final List<Candle> candles;
 
+  /// Live signal whose entry, stop loss and targets are hidden (no subscription).
+  final bool locked;
+
   const TradeSignal({
     required this.id,
     required this.pair,
@@ -206,6 +234,7 @@ class TradeSignal {
     required this.currentPrice,
     required this.livePips,
     this.candles = const [],
+    this.locked = false,
   });
 
   static SignalResult? _result(String? r) => switch (r) {
@@ -241,6 +270,16 @@ class TradeSignal {
                 ?.map((c) => Candle.fromList(c as List))
                 .toList() ??
             const [],
+        locked: j['locked'] as bool? ?? false,
+      );
+
+  /// Same signal with the premium levels removed (used by the offline demo).
+  TradeSignal lockedCopy() => TradeSignal(
+        id: id, pair: pair, timeframe: timeframe, isBuy: isBuy,
+        entry: 0, stopLoss: 0, tp1: 0, tp2: 0, confidence: confidence, reasons: const [],
+        isRunning: isRunning, result: result, tp1HitAt: tp1HitAt, openedAt: openedAt,
+        expiresAt: expiresAt, closedAt: closedAt, closePrice: closePrice, pips: pips,
+        currentPrice: currentPrice, livePips: null, candles: candles, locked: true,
       );
 
   String get direction => isBuy ? 'BUY' : 'SELL';

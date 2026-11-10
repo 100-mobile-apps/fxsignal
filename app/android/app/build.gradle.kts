@@ -11,7 +11,10 @@ val releaseKeyAlias = System.getenv("FX_RELEASE_KEY_ALIAS")
 val releaseKeyPassword = System.getenv("FX_RELEASE_KEY_PASSWORD")
 val releaseSigning = listOf(releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword)
     .all { !it.isNullOrBlank() }
-if (gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }) {
+// CI without the upload key: sign with the debug key so the build can be tested; the AAB is
+// then re-signed with the upload key before it goes to Google Play.
+val ciDebugSigning = System.getenv("FX_CI_DEBUG_SIGNING") == "1"
+if (gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) } && !ciDebugSigning) {
     require(releaseSigning) {
         "Release signing requires FX_RELEASE_STORE_FILE, FX_RELEASE_STORE_PASSWORD, " +
             "FX_RELEASE_KEY_ALIAS and FX_RELEASE_KEY_PASSWORD."
@@ -57,7 +60,11 @@ android {
 
     buildTypes {
         release {
-            if (releaseSigning) signingConfig = signingConfigs.getByName("release")
+            signingConfig = when {
+                releaseSigning -> signingConfigs.getByName("release")
+                ciDebugSigning -> signingConfigs.getByName("debug")
+                else -> null
+            }
         }
     }
 }

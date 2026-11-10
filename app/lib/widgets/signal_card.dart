@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 
 import '../core/format.dart';
@@ -101,17 +103,32 @@ class SignalCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(Fmt.pips(pips),
-                                style: AppText.mono(18, weight: FontWeight.w800, color: pColor)),
-                            const Text('pips', style: AppText.label),
-                          ],
-                        ),
+                        if (s.locked)
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: AppColors.gold.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.gold.withValues(alpha: 0.35)),
+                            ),
+                            child: const Icon(Icons.lock_rounded, size: 16, color: AppColors.gold),
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(Fmt.pips(pips),
+                                  style: AppText.mono(18, weight: FontWeight.w800, color: pColor)),
+                              const Text('pips', style: AppText.label),
+                            ],
+                          ),
                       ],
                     ),
                     const SizedBox(height: 14),
+                    if (s.locked)
+                      const _LockedLevels()
+                    else
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
@@ -144,6 +161,46 @@ class SignalCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Blurred level row with an unlock hint (no real numbers are on the device).
+class _LockedLevels extends StatelessWidget {
+  const _LockedLevels();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      decoration: BoxDecoration(
+        color: AppColors.bg.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: const Row(children: [
+              _Lv('Entry', '0.00000', AppColors.text),
+              _Lv('Stop loss', '0.00000', AppColors.sell),
+              _Lv('TP1', '0.00000', AppColors.buy),
+              _Lv('TP2', '0.00000', AppColors.buy),
+            ]),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: AppColors.gold.withValues(alpha: 0.35)),
+            ),
+            child: const Text('Tap to unlock entry, SL & TP',
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.gold)),
+          ),
+        ],
       ),
     );
   }

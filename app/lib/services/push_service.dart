@@ -8,9 +8,11 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../core/config.dart';
 import '../models/models.dart';
 
-/// Push notifications through Firebase Cloud Messaging topics.
-/// The server sends to "signals_EURUSD", "results_EURUSD", … and each phone
-/// subscribes to the topics that match the user's notification settings.
+/// Push notifications through Firebase Cloud Messaging.
+/// Topics ("signals_EURUSD", "results_EURUSD", …) carry results and, for free
+/// users, new-signal teasers without levels. Premium users leave the
+/// new-signal topics and register this phone's token instead, so the server
+/// can send them the full entry, stop loss and take profit directly.
 ///
 /// If Firebase isn't set up yet (no google-services.json), push is simply
 /// disabled and the rest of the app works normally.
@@ -87,23 +89,40 @@ class PushService {
         s.authorizationStatus == AuthorizationStatus.provisional;
   }
 
-  Future<bool> sync(NotificationPrefs prefs) {
+  /// This phone's FCM token (null if push is unavailable).
+  Future<String?> token() async {
+    if (!available) return null;
+    try {
+      return await FirebaseMessaging.instance.getToken();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Called with a new token when Firebase rotates it.
+  void onTokenRefresh(void Function(String token) handler) {
+    if (!available) return;
+    FirebaseMessaging.instance.onTokenRefresh.listen(handler);
+  }
+
+  Future<bool> sync(NotificationPrefs prefs, {bool premium = false}) {
     if (!available) return Future.value(false);
     final generation = ++_generation;
     final task = _operations.then((_) =>
-        generation == _generation ? _syncTopics(prefs) : Future.value(false));
+        generation == _generation ? _syncTopics(prefs, premium) : Future.value(false));
     _operations = task.then<void>((_) {});
     return task;
   }
 
-  Future<bool> _syncTopics(NotificationPrefs prefs) async {
+  Future<bool> _syncTopics(NotificationPrefs prefs, bool premium) async {
     final fm = FirebaseMessaging.instance;
     try {
       await (prefs.reports ? fm.subscribeToTopic('reports') : fm.unsubscribeFromTopic('reports'));
       for (final pair in AppConfig.pairs) {
         final k = _key(pair);
         final want = prefs.wantsPair(pair);
-        await (prefs.signals && want
+        // Premium phones get full new-signal alerts by token, so they skip the teaser topic.
+        await (prefs.signals && want && !premium
             ? fm.subscribeToTopic('signals_$k')
             : fm.unsubscribeFromTopic('signals_$k'));
         await (prefs.results && want

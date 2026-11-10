@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../core/config.dart';
 import '../models/models.dart';
 import 'api.dart';
 
@@ -20,6 +21,8 @@ class RemoteApi extends Api {
     final headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      // Lets the server tell this version apart from apps released before subscriptions.
+      'X-App-Build': '${AppConfig.build}',
       if (token != null) 'Authorization': 'Bearer $token',
     };
     final encoded = body == null ? null : jsonEncode(body);
@@ -179,6 +182,21 @@ class RemoteApi extends Api {
     final d = await _req('GET', '/health');
     final p = (d['promo'] as Map?)?.cast<String, dynamic>() ?? const {};
     return {for (final e in p.entries) e.key: e.value == true};
+  }
+
+  @override
+  Future<AppUser> verifyPurchase(String productId, String purchaseToken) async =>
+      _user(await _req('POST', '/billing/verify',
+          body: {'product_id': productId, 'purchase_token': purchaseToken}));
+
+  @override
+  Future<void> registerDevice(String pushToken) async {
+    await _req('PUT', '/me/device', body: {'token': pushToken});
+  }
+
+  @override
+  Future<void> unregisterDevice(String pushToken) async {
+    await _req('DELETE', '/me/device', body: {'token': pushToken});
   }
 
   Future<bool> pushEnabled() async =>

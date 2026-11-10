@@ -1,0 +1,6 @@
+# Secrets that must never be committed
+backend/api/src/config.php
+backend/api/src/*service-account*.json
+*.jks
+*.keystore
+key.properties

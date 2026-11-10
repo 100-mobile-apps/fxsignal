@@ -7,6 +7,7 @@ import '../state/data_stores.dart';
 import '../state/session_store.dart';
 import '../widgets/common.dart';
 import '../widgets/signal_card.dart';
+import 'paywall_screen.dart';
 import 'signal_detail_screen.dart';
 
 void openSignal(BuildContext context, int id) {
@@ -40,6 +41,11 @@ class _SignalsScreenState extends State<SignalsScreen> {
   void dispose() {
     _scroll.dispose();
     super.dispose();
+  }
+
+  Future<void> _unlock() async {
+    final unlocked = await openPaywall(context);
+    if (unlocked && mounted) await context.read<SignalsStore>().refresh();
   }
 
   Future<void> _refresh() async {
@@ -92,6 +98,10 @@ class _SignalsScreenState extends State<SignalsScreen> {
                 ),
                 const SizedBox(height: 18),
                 const DemoBanner(),
+                if (user != null && !user.premium) ...[
+                  _UnlockBanner(onTap: _unlock),
+                  const SizedBox(height: 14),
+                ],
                 _PerformanceCard(
                   winRate: stats?.winRate,
                   pips: stats?.totalPips,
@@ -174,7 +184,8 @@ class _SignalsScreenState extends State<SignalsScreen> {
                   separatorBuilder: (_, __) => const SizedBox(height: 14),
                   itemBuilder: (context, i) => SignalCard(
                     s: list[i],
-                    onTap: () => openSignal(context, list[i].id),
+                    // Locked live signals open the paywall, never the detail page.
+                    onTap: () => list[i].locked ? _unlock() : openSignal(context, list[i].id),
                   ),
                 ),
               ),
@@ -206,6 +217,53 @@ class _SignalsScreenState extends State<SignalsScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UnlockBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _UnlockBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: AppColors.goldGradient,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.workspace_premium_rounded, size: 32, color: Color(0xFF1A1204)),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Unlock live signals',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1A1204))),
+                    SizedBox(height: 2),
+                    Text('7-day free trial · from \$3/month',
+                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF3A2A08))),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(color: const Color(0xFF1A1204), borderRadius: BorderRadius.circular(30)),
+                child: const Text('Try free',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.gold)),
+              ),
+            ],
+          ),
         ),
       ),
     );

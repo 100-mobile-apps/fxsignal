@@ -53,6 +53,11 @@ final class Cron
         }
 
         $log = array_merge($log, Reports::sendScheduled($now));
+        try {
+            $log = array_merge($log, Billing::refreshDue($now));
+        } catch (Throwable $e) {
+            $log[] = 'billing: ' . $e->getMessage();
+        }
         [$sent, $failed] = Mailer::processQueue();
         if ($sent || $failed) $log[] = "emails: $sent sent" . ($failed ? ", $failed failed (will retry)" : '');
 
@@ -133,7 +138,7 @@ final class Cron
         if ($now - ($candleT + $tfSec) > 3 * $tfSec) return "$pair: market closed / stale data";
 
         $min = (int) config('min_confidence', 65);
-        $a = Engine::analyze($closed, $min);
+        $a = Engine::analyze($closed, $min, $pair);
         if (!$a || $a['direction'] === 'WAIT' || $a['confidence'] < $min || $a['sl'] === null) {
             return "$pair: no setup" . ($a ? " ({$a['direction']} {$a['confidence']}%)" : '');
         }

@@ -316,14 +316,19 @@ class DemoApi extends Api {
     final start = (page - 1) * per;
     if (start >= list.length) return const SignalPage([], false);
     final end = math.min(start + per, list.length);
+    final premium = await _premium();
+    for (var i = start; i < end; i++) {
+      list[i] = _gate(list[i], premium);
+    }
     return SignalPage(list.sublist(start, end), end < list.length);
   }
 
   @override
   Future<TradeSignal> signal(int id) async {
     await _delay();
-    return _all.firstWhere((s) => s.id == id,
+    final s = _all.firstWhere((s) => s.id == id,
         orElse: () => throw const ApiException('Signal not found', 404));
+    return _gate(s, await _premium());
   }
 
   @override
@@ -383,6 +388,29 @@ class DemoApi extends Api {
 
   @override
   Future<Map<String, bool>> promo() async => const {'coffee': true, 'whatsapp': true, 'hire': true};
+
+  @override
+  Future<AppUser> verifyPurchase(String productId, String purchaseToken) async {
+    await _delay();
+    final u = await me();
+    final yearly = productId.contains('year');
+    return _saveUser(AppUser(
+      id: u.id, name: u.name, email: u.email, createdAt: u.createdAt,
+      emailVerified: u.emailVerified, notifications: u.notifications, watchlist: u.watchlist,
+      premium: true, premiumPlan: yearly ? 'yearly' : 'monthly',
+      premiumUntil: DateTime.now().add(Duration(days: yearly ? 365 : 30)),
+      billingAccountId: u.billingAccountId,
+    ));
+  }
+
+  @override
+  Future<void> registerDevice(String pushToken) async {}
+
+  @override
+  Future<void> unregisterDevice(String pushToken) async {}
+
+  Future<bool> _premium() async => (await _loadUser())?.premium ?? false;
+  TradeSignal _gate(TradeSignal s, bool premium) => s.isRunning && !premium ? s.lockedCopy() : s;
 
   @override
   Future<List<PriceQuote>> prices() async {

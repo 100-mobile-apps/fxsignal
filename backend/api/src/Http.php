@@ -14,16 +14,25 @@ class ApiError extends Exception
 
 final class Http
 {
+    /** Last status sent (read by in-process tests). */
+    public static $lastStatus = 200;
+
     public static function send($data, int $status = 200): void
     {
-        http_response_code($status);
-        header('Content-Type: application/json; charset=utf-8');
+        self::$lastStatus = $status;
+        if (!headers_sent()) {
+            http_response_code($status);
+            header('Content-Type: application/json; charset=utf-8');
+        }
         echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
     }
 
+    /** Test hook: request body used instead of php://input. */
+    public static $bodyOverride = null;
+
     public static function body(): array
     {
-        $raw = file_get_contents('php://input');
+        $raw = self::$bodyOverride ?? file_get_contents('php://input');
         if ($raw === '' || $raw === false) return [];
         $data = json_decode($raw, true);
         if (!is_array($data)) throw new ApiError('Invalid JSON body', 400);
@@ -40,6 +49,25 @@ final class Http
         }
         if ($h && preg_match('/Bearer\s+(\S+)/i', $h, $m)) return $m[1];
         return null;
+    }
+
+    public static function header(string $name): ?string
+    {
+        $key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+        if (isset($_SERVER[$key])) return (string) $_SERVER[$key];
+        if (function_exists('getallheaders')) {
+            foreach (getallheaders() as $k => $v) {
+                if (strcasecmp($k, $name) === 0) return (string) $v;
+            }
+        }
+        return null;
+    }
+
+    /** Build number the app sends in X-App-Build (0 = an app version from before subscriptions). */
+    public static function appBuild(): int
+    {
+        $v = self::header('X-App-Build');
+        return $v !== null && ctype_digit($v) ? (int) $v : 0;
     }
 
     public static function ip(): string

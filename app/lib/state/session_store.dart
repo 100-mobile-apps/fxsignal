@@ -26,8 +26,11 @@ class SessionStore extends ChangeNotifier {
   SessionStatus status = SessionStatus.loading;
   AppUser? user;
 
+  bool _tokenListener = false;
+
   Future<void> _syncDelivery(AppUser account) async {
-    final topicsReady = await push.sync(account.notifications);
+    final topicsReady = await push.sync(account.notifications, premium: account.premium);
+    unawaited(_registerDevice());
     var permissionGranted = false;
     if (topicsReady) {
       try {
@@ -35,6 +38,29 @@ class SessionStore extends ChangeNotifier {
       } catch (_) {}
     }
     await background?.sync(account, fcmReady: topicsReady && permissionGranted);
+  }
+
+  /// Sends this phone's push token to the server (premium alerts go to it directly).
+  Future<void> _registerDevice() async {
+    if (!_tokenListener) {
+      _tokenListener = true;
+      push.onTokenRefresh((t) {
+        if (status == SessionStatus.loggedIn) api.registerDevice(t).catchError((_) {});
+      });
+    }
+    final t = await push.token();
+    if (t == null) return;
+    try {
+      await api.registerDevice(t);
+    } catch (_) {}
+  }
+
+  /// Re-reads the account (e.g. after a renewal or cancellation in Google Play).
+  Future<void> refreshUser() async {
+    if (status != SessionStatus.loggedIn) return;
+    try {
+      setUser(await api.me());
+    } catch (_) {}
   }
 
   Future<void> bootstrap() async {
@@ -158,9 +184,11 @@ class SessionStore extends ChangeNotifier {
   }
 
   void setUser(AppUser u) {
+    final premiumChanged = user != null && user!.premium != u.premium;
     user = u;
     _cacheUser(u);
     notifyListeners();
+    if (premiumChanged && status == SessionStatus.loggedIn) unawaited(_syncDelivery(u));
   }
 
   Future<void> _cacheUser(AppUser u) async {
@@ -181,6 +209,12 @@ class SessionStore extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    final t = await push.token();
+    if (t != null && api.token != null) {
+      try {
+        await api.unregisterDevice(t);
+      } catch (_) {}
+    }
     await _clear();
     status = SessionStatus.loggedOut;
     notifyListeners();

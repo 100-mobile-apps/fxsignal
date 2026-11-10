@@ -43,7 +43,7 @@ final class Auth
                 ],
             ],
             'watchlist' => $u['watchlist'] ? json_decode($u['watchlist'], true) : config('pairs'),
-        ];
+        ] + Billing::publicFields($u);
     }
 
     private static function session(array $user, int $status = 200): void

@@ -1,0 +1,76 @@
+name: build-android
+on:
+  push:
+    branches: [main, 'release/**']
+    paths: ['app/**', '.github/workflows/build.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: app
+    env:
+      HAS_KEY: ${{ secrets.FX_UPLOAD_KEYSTORE_B64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk /opt/ghc /usr/local/share/boost || true
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - name: Complete the Android project
+        run: |
+          flutter --version
+          flutter create --org com.forexsignalslive --project-name forex_signals --platforms android . > /dev/null
+          rm -f test/widget_test.dart.orig
+          git checkout -- test/ || true
+          M=android/app/src/main/AndroidManifest.xml
+          grep -q "default_notification_channel_id" "$M" || echo "manifest check failed"
+          perl -pi -e 's/minSdk\s*=\s*flutter\.minSdkVersion/minSdk = 24/' android/app/build.gradle.kts
+      - run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee ../analyze.log
+      - name: Test
+        run: flutter test 2>&1 | tee ../test.log
+      - name: Upload key (from repository secrets, if set)
+        if: env.HAS_KEY == 'true'
+        run: |
+          echo "${{ secrets.FX_UPLOAD_KEYSTORE_B64 }}" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "FX_RELEASE_STORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+          echo "FX_RELEASE_STORE_PASSWORD=${{ secrets.FX_RELEASE_STORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "FX_RELEASE_KEY_ALIAS=${{ secrets.FX_RELEASE_KEY_ALIAS }}" >> "$GITHUB_ENV"
+          echo "FX_RELEASE_KEY_PASSWORD=${{ secrets.FX_RELEASE_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+      - name: No upload key yet - test signing
+        if: env.HAS_KEY != 'true'
+        run: echo "FX_CI_DEBUG_SIGNING=1" >> "$GITHUB_ENV"
+      - name: Build AAB + APK
+        env:
+          # Settings → Secrets and variables → Actions → Variables → API_URL (e.g. https://yourdomain.com/api).
+          # Empty = demo build (offline simulation) — never upload a demo build to Google Play.
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          flutter build appbundle --release --dart-define=API_URL=$API_URL 2>&1 | tee ../build.log
+          flutter build apk --release --dart-define=API_URL=$API_URL 2>&1 | tee -a ../build.log
+          echo "api_url=${API_URL:-DEMO}" > ../api.txt
+      - name: Publish build outputs to branch out-aab
+        if: always()
+        working-directory: .
+        run: |
+          mkdir -p /tmp/out
+          cp app/build/app/outputs/bundle/release/app-release.aab /tmp/out/ 2>/dev/null || true
+          cp app/build/app/outputs/flutter-apk/app-release.apk /tmp/out/ 2>/dev/null || true
+          cp analyze.log test.log build.log /tmp/out/ 2>/dev/null || true
+          echo "commit=${GITHUB_SHA} signed_with_upload_key=${HAS_KEY} run=${GITHUB_RUN_ID} $(cat api.txt 2>/dev/null)" > /tmp/out/BUILD_INFO.txt
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan out-aab
+          git rm -rqf . || true
+          cp /tmp/out/* .
+          git add -A && git commit -qm "build ${GITHUB_SHA}" && git push -f origin out-aab

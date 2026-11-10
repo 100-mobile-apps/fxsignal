@@ -6,6 +6,16 @@ require_once __DIR__ . '/TradingPolicy.php';
  * Production technical-indicator signal engine. The Flutter demo has its own
  * illustrative rules and is not a validation of this server's signals.
  *
+ * Strategy v2 (Nov 2026), run on 4-hour candles (config timeframe '4h'):
+ *  - Currency pairs: "range reversal". In a quiet market (ADX < 20) price that
+ *    closes outside the 20-period Bollinger Band (2 st. dev.) with RSI at an
+ *    extreme tends to snap back toward the average. SL 2 ATR, TP1 1 ATR, TP2 2 ATR.
+ *  - Gold: "trend pullback". Gold trends, so the trend-confluence rules are kept
+ *    but a signal is only taken when price has pulled back to within 1 ATR of
+ *    the 20 EMA (no chasing). SL 1.5 ATR, TP1 1.5 ATR, TP2 3 ATR.
+ * Backtest on Dukascopy hourly data 2022-01 to 2026-11 aggregated to 4h, with
+ * 1.2 pip (FX) / 3 pip (gold) costs: see backend/STRATEGY_RESULTS.md.
+ *
  * Candles: list of ['t' => unix seconds, 'o', 'h', 'l', 'c'], oldest first.
  */
 final class Engine
@@ -90,10 +100,101 @@ final class Engine
         return $out;
     }
 
+    /** Average Directional Index (Wilder). */
+    public static function adx(array $candles, int $p = 14): array
+    {
+        $n = count($candles);
+        $out = array_fill(0, $n, null);
+        if ($n < 2 * $p + 1) return $out;
+        $tr = $pdm = $mdm = [0.0];
+        for ($i = 1; $i < $n; $i++) {
+            $up = $candles[$i]['h'] - $candles[$i - 1]['h'];
+            $dn = $candles[$i - 1]['l'] - $candles[$i]['l'];
+            $pdm[] = ($up > $dn && $up > 0) ? $up : 0.0;
+            $mdm[] = ($dn > $up && $dn > 0) ? $dn : 0.0;
+            $tr[] = max($candles[$i]['h'] - $candles[$i]['l'], abs($candles[$i]['h'] - $candles[$i - 1]['c']), abs($candles[$i]['l'] - $candles[$i - 1]['c']));
+        }
+        $atr = array_sum(array_slice($tr, 1, $p));
+        $sp = array_sum(array_slice($pdm, 1, $p));
+        $sm = array_sum(array_slice($mdm, 1, $p));
+        $dx = [];
+        for ($i = $p + 1; $i < $n; $i++) {
+            $atr = $atr - $atr / $p + $tr[$i];
+            $sp = $sp - $sp / $p + $pdm[$i];
+            $sm = $sm - $sm / $p + $mdm[$i];
+            $pdi = $atr > 0 ? 100 * $sp / $atr : 0;
+            $mdi = $atr > 0 ? 100 * $sm / $atr : 0;
+            $dx[$i] = ($pdi + $mdi) > 0 ? 100 * abs($pdi - $mdi) / ($pdi + $mdi) : 0;
+            if ($i === 2 * $p) $out[$i] = array_sum(array_slice($dx, 0, $p)) / $p;
+            elseif ($i > 2 * $p) $out[$i] = ($out[$i - 1] * ($p - 1) + $dx[$i]) / $p;
+        }
+        return $out;
+    }
+
     /**
+     * Strategy v2 entry point. Without a pair the original trend engine is used.
      * @return array|null ['direction' => BUY|SELL|WAIT, 'confidence', 'entry', 'sl', 'tp1', 'tp2', 'rsi', 'atr', 'reasons']
      */
-    public static function analyze(array $candles, int $threshold = 60): ?array
+    public static function analyze(array $candles, int $threshold = 60, ?string $pair = null): ?array
+    {
+        if ($pair === null) return self::trendConfluence($candles, $threshold);
+        return str_starts_with($pair, 'XAU') ? self::goldPullback($candles, $threshold) : self::rangeReversal($candles);
+    }
+
+    public static function goldPullback(array $candles, int $threshold = 60): ?array
+    {
+        $a = self::trendConfluence($candles, $threshold);
+        if (!$a || $a['direction'] === 'WAIT') return $a;
+        $c = array_map(fn($x) => (float) $x['c'], $candles);
+        $L = count($c) - 1;
+        $e20 = self::ema($c, 20)[$L];
+        if ($a['atr'] <= 0 || abs($c[$L] - $e20) > $a['atr']) {
+            return ['direction' => 'WAIT', 'sl' => null, 'tp1' => null, 'tp2' => null, 'reasons' => ['Trend is up/down but price is stretched; waiting for a pullback']] + $a;
+        }
+        $a['reasons'][] = 'Price pulled back near the 20 EMA (entry in the trend without chasing)';
+        return $a;
+    }
+
+    public static function rangeReversal(array $candles): ?array
+    {
+        $n = count($candles);
+        if ($n < 200 || !TradingPolicy::validCandles($candles)) return null;
+        $c = array_map(fn($x) => (float) $x['c'], $candles);
+        $L = $n - 1;
+        $price = $c[$L];
+        $at = self::atr($candles, 14)[$L] ?? 0.0;
+        $adx = self::adx($candles, 14)[$L] ?? 99.0;
+        $rsi = self::rsi($c, 14)[$L] ?? 50.0;
+        $win = array_slice($c, $L - 19, 20);
+        $mid = array_sum($win) / 20;
+        $sd = sqrt(array_sum(array_map(fn($v) => ($v - $mid) ** 2, $win)) / 20);
+        $out = ['direction' => 'WAIT', 'confidence' => 0, 'entry' => $price, 'sl' => null, 'tp1' => null, 'tp2' => null,
+                'rsi' => $rsi, 'atr' => $at, 'reasons' => []];
+        if ($at <= 0 || $sd <= 0 || $adx >= 20) return $out;
+        $z = ($price - $mid) / $sd;
+        if ($z < -2 && $rsi <= 35) $dir = 1;
+        elseif ($z > 2 && $rsi >= 65) $dir = -1;
+        else return $out;
+
+        $stretch = min(1.0, (abs($z) - 2) / 1.0);
+        $rsiX = min(1.0, (($dir === 1 ? 35 - $rsi : $rsi - 65)) / 15);
+        $calm = min(1.0, (20 - $adx) / 10);
+        $out['direction'] = $dir === 1 ? 'BUY' : 'SELL';
+        $out['confidence'] = (int) round(min(95, 68 + 10 * $stretch + 9 * $rsiX + 8 * $calm));
+        $out['sl'] = $price - $dir * 2.0 * $at;
+        $out['tp1'] = $price + $dir * 1.0 * $at;
+        $out['tp2'] = $price + $dir * 2.0 * $at;
+        $out['reasons'] = [
+            sprintf('Price closed %s the Bollinger Band (%.1f st. dev. from the 20-period average)', $dir === 1 ? 'below the lower' : 'above the upper', abs($z)),
+            sprintf('RSI %.0f: %s', $rsi, $dir === 1 ? 'oversold' : 'overbought'),
+            sprintf('ADX %.0f: quiet, ranging market that favours a move back to the average', $adx),
+            'Targets sit between price and the 20-period average',
+        ];
+        return $out;
+    }
+
+    /** Original trend-confluence rules (EMA 20/50/200, MACD, RSI). */
+    public static function trendConfluence(array $candles, int $threshold = 60): ?array
     {
         $n = count($candles);
         if ($n < 200 || !TradingPolicy::validCandles($candles)) return null;

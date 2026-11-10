@@ -114,7 +114,7 @@ HTML;
         foreach ($reasons as $r) {
             $reasonHtml .= '<div style="font-size:13.5px;color:#AEB6C8;padding:3px 0">✓ ' . self::e($r) . '</div>';
         }
-        $inner = '<div style="font-size:13px;color:#8A93A8;text-transform:uppercase;letter-spacing:1px">New signal · H1</div>'
+        $inner = '<div style="font-size:13px;color:#8A93A8;text-transform:uppercase;letter-spacing:1px">New signal · ' . strtoupper(str_replace(['1h', '4h', '1day'], ['H1', 'H4', 'D1'], (string) ($s['timeframe'] ?? '4h'))) . '</div>'
             . '<div style="margin-top:6px;font-size:26px;font-weight:800;color:#F4F6FB">' . self::e($pair)
             . ' <span style="font-size:14px;padding:4px 10px;border-radius:20px;border:1px solid ' . $color . ';color:' . $color . ';vertical-align:middle">' . $s['direction'] . '</span></div>'
             . '<div style="margin-top:6px;font-size:13px;color:#8A93A8">Strength ' . (int) $s['confidence'] . '% · Published ' . gmdate('M j, H:i', strtotime($s['opened_at'] . ' UTC')) . ' UTC</div>'
@@ -126,6 +126,28 @@ HTML;
             . "\nTP1: " . self::fmt($pair, $s['tp1']) . "\nTP2: " . self::fmt($pair, $s['tp2']) . "\nStrength: {$s['confidence']}%\n\n"
             . implode("\n", array_map(fn($r) => "- $r", $reasons)) . "\n\nUnsubscribe: $unsub";
         $html = self::layout("{$s['direction']} $pair — entry, stop loss and targets inside", $inner, $unsub,
+            "You're getting this because new-signal emails are on for " . self::e($pair) . '.');
+        return [$subject, $html, $text];
+    }
+
+    /** New-signal email for users without a subscription: no entry, stop loss or targets. */
+    public static function lockedSignal(array $s, string $name, string $unsub): array
+    {
+        $buy = $s['direction'] === 'BUY';
+        $color = $buy ? '#1FD18B' : '#FF5A6E';
+        $pair = $s['pair'];
+        $subject = "🔒 New {$s['direction']} signal on $pair";
+        $inner = '<div style="font-size:13px;color:#8A93A8;text-transform:uppercase;letter-spacing:1px">New signal · ' . strtoupper(str_replace(['1h', '4h', '1day'], ['H1', 'H4', 'D1'], (string) ($s['timeframe'] ?? '4h'))) . '</div>'
+            . '<div style="margin-top:6px;font-size:26px;font-weight:800;color:#F4F6FB">' . self::e($pair)
+            . ' <span style="font-size:14px;padding:4px 10px;border-radius:20px;border:1px solid ' . $color . ';color:' . $color . ';vertical-align:middle">' . $s['direction'] . '</span></div>'
+            . '<div style="margin-top:6px;font-size:13px;color:#8A93A8">Strength ' . (int) $s['confidence'] . '% · Published ' . gmdate('M j, H:i', strtotime($s['opened_at'] . ' UTC')) . ' UTC</div>'
+            . '<div style="margin-top:18px;padding:16px;border-radius:12px;background:#151D2E;border:1px solid #F5B942;color:#F4F6FB;font-size:14px;line-height:1.55">'
+            . '🔒 The entry, stop loss, TP1 and TP2 for this signal are for Premium members.<br>'
+            . '<span style="color:#AEB6C8">Start your 7-day free trial in the app, then $5/month or $36/year ($3/month).</span></div>'
+            . self::button('Open the app to unlock');
+        $text = "New signal: {$s['direction']} $pair ({$s['confidence']}% strength)\n\n"
+            . "The entry, stop loss and take profit are for Premium members. Open Forex Signals Live to start your 7-day free trial.\n\nUnsubscribe: $unsub";
+        $html = self::layout("{$s['direction']} $pair — unlock the levels in the app", $inner, $unsub,
             "You're getting this because new-signal emails are on for " . self::e($pair) . '.');
         return [$subject, $html, $text];
     }

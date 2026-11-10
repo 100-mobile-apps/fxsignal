@@ -8,10 +8,12 @@ import '../core/theme.dart';
 import '../data/api.dart';
 import '../models/models.dart';
 import '../services/push_service.dart';
+import '../state/billing_store.dart';
 import '../state/session_store.dart';
 import '../widgets/common.dart';
 import 'auth_screens.dart';
 import 'legal_screen.dart';
+import 'paywall_screen.dart';
 import 'verify_email_screen.dart';
 import '../widgets/developer_widgets.dart';
 
@@ -94,6 +96,36 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 22),
+          const _GroupTitle('Subscription'),
+          _Group(children: [
+            if (user.premium) ...[
+              _Tile(Icons.workspace_premium_rounded, 'Premium · ${user.premiumPlan == 'yearly' ? 'Yearly' : user.premiumPlan == 'complimentary' ? 'Complimentary' : 'Monthly'}',
+                  subtitle: user.premiumUntil == null
+                      ? 'Live signals unlocked'
+                      : 'Paid through ${Fmt.date(user.premiumUntil)}',
+                  chevron: false),
+              if (user.premiumPlan != 'complimentary')
+                _Tile(Icons.manage_accounts_outlined, 'Manage subscription',
+                    subtitle: 'Change plan or cancel in Google Play',
+                    onTap: () => context.read<BillingStore>().manage()),
+            ] else ...[
+              _Tile(Icons.workspace_premium_rounded, 'Unlock live signals',
+                  subtitle: '7-day free trial · \$5/month or \$36/year',
+                  onTap: () => openPaywall(context)),
+              _Tile(Icons.restore_rounded, 'Restore purchase',
+                  subtitle: 'Already subscribed on this Google account?',
+                  onTap: () async {
+                    final billing = context.read<BillingStore>();
+                    await billing.restore();
+                    if (context.mounted) {
+                      showSnack(context, billing.error ?? billing.notice ??
+                          (context.read<SessionStore>().user?.premium == true
+                              ? 'Premium restored.'
+                              : 'Checked with Google Play.'));
+                    }
+                  }),
+            ],
+          ]),
           const _GroupTitle('Account'),
           _Group(children: [
             _Tile(Icons.notifications_none_rounded, 'Notifications',
@@ -250,7 +282,8 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('This permanently deletes your account and settings. This cannot be undone.',
+          const Text('This permanently deletes your account and settings. This cannot be undone. '
+              'Deleting your account does not cancel a Google Play subscription: cancel it in Google Play first.',
               style: AppText.body),
           const SizedBox(height: 16),
           TextField(

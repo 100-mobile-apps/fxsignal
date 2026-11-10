@@ -3,8 +3,9 @@ declare(strict_types=1);
 
 final class Signals
 {
-    public static function format(array $s, bool $withCandles = false): array
+    public static function format(array $s, bool $withCandles = false, bool $locked = false): array
     {
+        $locked = $locked && $s['status'] === 'running';
         $out = [
             'id' => (int) $s['id'],
             'pair' => $s['pair'],
@@ -31,13 +32,32 @@ final class Signals
         if ($withCandles) {
             $out['candles'] = json_decode($s['candles'] ?: '[]', true);
         }
+        $out['locked'] = $locked;
+        if ($locked) {
+            // Live levels are premium. Anything the entry could be worked out from is removed too.
+            foreach (['entry', 'stop_loss', 'tp1', 'tp2', 'live_pips'] as $k) $out[$k] = null;
+            $out['reasons'] = [];
+        }
         return $out;
+    }
+
+    /**
+     * App versions from before subscriptions cannot show locked signals, so they
+     * are asked to update instead of receiving data they would mis-read.
+     */
+    private static function requireCurrentApp(): void
+    {
+        if (Http::appBuild() < (int) config('min_app_build', 5)) {
+            throw new ApiError('Forex Signals Live has a new version. Please update the app from Google Play to see live signals.', 426);
+        }
     }
 
     public static function list(): void
     {
-        Auth::user();
+        $user = Auth::user();
         $status = ($_GET['status'] ?? 'running') === 'closed' ? 'closed' : 'running';
+        if ($status === 'running') self::requireCurrentApp();
+        $locked = !Billing::isPremium($user);
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $per = 20;
         $params = [$status];
@@ -58,7 +78,7 @@ final class Signals
         $rows = Db::all("SELECT * FROM signals WHERE $where ORDER BY $order LIMIT " . ($per + 1) . " OFFSET $offset", $params);
         $hasMore = count($rows) > $per;
         Http::send([
-            'items' => array_map([self::class, 'format'], array_slice($rows, 0, $per)),
+            'items' => array_map(fn($r) => self::format($r, false, $locked), array_slice($rows, 0, $per)),
             'page' => $page,
             'has_more' => $hasMore,
         ]);
@@ -66,9 +86,10 @@ final class Signals
 
     public static function show(array $params): void
     {
-        Auth::user();
+        $user = Auth::user();
         $row = Db::one('SELECT * FROM signals WHERE id = ?', [(int) $params['id']]);
         if (!$row) throw new ApiError('Signal not found', 404);
-        Http::send(['signal' => self::format($row, true)]);
+        if ($row['status'] === 'running') self::requireCurrentApp();
+        Http::send(['signal' => self::format($row, true, !Billing::isPremium($user))]);
     }
 }
