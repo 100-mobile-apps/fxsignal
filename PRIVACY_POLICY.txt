@@ -43,8 +43,18 @@ Firebase Cloud Messaging (FCM) at startup. FCM may process an app-instance
 or device token. After sign-in, the App synchronizes signal, result and
 report topic subscriptions with your preferences even if notification
 display permission is denied; device settings control whether notifications
-appear. Our server sends to topics and does not store device tokens. Push
-may be unavailable if Firebase is not configured.
+appear. Our server stores this device's push token with your account so it
+can send Premium alerts with full signal levels; the token is deleted when
+you log out or delete your account. Push may be unavailable if Firebase is
+not configured.
+
+Premium subscriptions: Subscriptions are bought and paid through Google
+Play. Google processes the payment; we never receive your card or bank
+details. To unlock Premium we receive from Google Play the purchase token
+(stored encrypted), the product and plan, the subscription status, the
+renewal or expiry date and the order ID, and we link them to your account.
+We check this with Google Play when you subscribe and periodically
+afterwards so cancellations, refunds and renewals are reflected.
 
 Demo mode: If the App was built without a live API URL, it uses simulated
 local prices and results instead of creating an account on our server. A
@@ -58,9 +68,9 @@ can still involve those services as described below.
 We use this information to create and secure accounts, authenticate sign-in,
 send verification and password-reset emails, remember preferences, provide
 market and signal information, deliver the alerts and reports you select,
-respond to support requests, prevent abuse, and maintain and troubleshoot the
-service. We do not sell your account information or use this App to process
-payments. Market data and modeled signals are general information, not a
+respond to support requests, prevent abuse, verify and manage Premium
+subscriptions, and maintain and troubleshoot the service. We do not sell your
+account information. Payments are processed by Google Play, not by us. Market data and modeled signals are general information, not a
 record of your personal trades.
 
 Where applicable, we process information to provide the service you request,
@@ -73,7 +83,8 @@ emails as explained below.
 Our hosting provider processes the account database and ordinary server
 logs. Our email host or SMTP provider processes the address and content
 necessary to deliver verification codes, alerts and reports. If push is
-enabled, Google Firebase processes push-delivery information. The backend
+enabled, Google Firebase processes push-delivery information. Google Play
+processes subscription payments and shares the subscription status with us. The backend
 requests price candles for selected markets from Twelve Data; it does not
 need to send your account name or email to Twelve Data for that request.
 

@@ -1,6 +1,6 @@
 # Publishing the Premium update (v1.1.0, build 5)
 
-Do the parts **in this order**. The server goes first so that old app versions keep working; the app goes second.
+Do the parts **in this order**. The server goes first, with locking off, so old app versions keep working. The app goes second. Locking turns on only on launch day (Part 4, step 9).
 
 ---
 
@@ -65,24 +65,9 @@ This is optional. Without it, the server re-checks every subscription at least o
 Back up first: cPanel → **Backup** → download the database, and zip the `api` folder from File Manager.
 
 1. **Database**: cPanel → phpMyAdmin → select the Forex Signals database → **Import** → `backend/migrations/2026-11-premium.sql`. This only adds columns and tables; no existing data changes.
-2. **Upload the new code**: in File Manager, upload these from `backend/api/` into your live `api/` folder and overwrite:
-   - `index.php`
-   - everything in `src/` **except `config.php`**. The new files are `Billing.php` and `GoogleAuth.php`; the changed ones are `Account.php`, `Auth.php`, `Cron.php`, `EmailTemplates.php`, `Engine.php`, `Fcm.php`, `Http.php`, `Notify.php`, `Signals.php`, `bootstrap.php`.
+2. **Upload the new code**: File Manager → open your live `api/` folder → **Upload** `fxsignals-premium-update.zip` (same as `backend/fxsignals-cpanel.zip`) → right-click it → **Extract** into that same folder and allow it to overwrite. It doesn't contain `config.php`, so your settings stay untouched. Delete the zip afterwards.
 3. **Upload `play-service-account.json`** into `api/src/`, next to `config.php`. The folder already blocks web access to it.
-4. **Edit `api/src/config.php`** and add or change these lines (copy them from `config.sample.php`):
-   ```php
-   'timeframe' => '4h',            // strategy v2 runs on 4-hour candles
-   'signal_expiry_hours' => 120,
-   'play' => [
-       'package_name' => 'com.forexsignalslive.forex_signals',
-       'service_account_file' => __DIR__ . '/play-service-account.json',
-       'products' => ['fx_premium_monthly', 'fx_premium_yearly'],
-       'rtdn_secret' => 'YOUR_RTDN_SECRET',
-   ],
-   'premium_emails' => ['you@gmail.com', 'reviewer-account@gmail.com'],
-   'min_app_build' => 5,
-   ```
-   `premium_emails` get Premium free: you, testers and the Google reviewer account.
+4. **Edit `api/src/config.php`** using `config-changes.txt`. The block there is ready to paste, with a notification secret already generated. Leave **`'premium_enforced' => false`** for now: nothing gets locked, every user keeps full signals, and the new 4-hour strategy starts working right away.
 5. **Check it**: open `https://YOUR-DOMAIN/api/health` in a browser. It should load as before. The cron job you already have doesn't need to change.
 
 **What happens to signals already running:** they keep being tracked to the end. New signals use strategy v2 on the next 4-hour candle.
@@ -115,6 +100,7 @@ Back up first: cPanel → **Backup** → download the database, and zip the `api
 6. **Store listing**: change wording like "free forex signals" to "free trial", and say that live signal levels need a subscription. Google rejects listings that call a paid feature free.
 7. **App content → Sign-in details**: give the reviewer an account listed in `premium_emails` so they can see the full app.
 8. **Send for review.**
+9. **Launch day**: when Play shows the update as live, edit `api/src/config.php` and set `'premium_enforced' => true,`. That one line starts locking live signals for non-subscribers and tells old app versions to update. Until then everyone keeps full access, so nobody is told to update before the update exists.
 
 ---
 
@@ -122,6 +108,7 @@ Back up first: cPanel → **Backup** → download the database, and zip the `api
 
 | Situation | What they see |
 |---|---|
+| *(all rows below apply after launch day, when `premium_enforced` is true)* | |
 | Old app, opens **Active signals** | The server refuses: *"Forex Signals Live has a new version. Please update the app from Google Play to see live signals."* No levels are sent. |
 | Old app, **History / Results / Reports / Markets** | Work as before, so they still see your track record. |
 | Old app, **push alerts** | New-signal alerts become teasers ("🔒 New BUY signal on EUR/USD — subscribe to see the entry…"). Result alerts (TP/SL hit) are unchanged. |

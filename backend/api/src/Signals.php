@@ -47,7 +47,7 @@ final class Signals
      */
     private static function requireCurrentApp(): void
     {
-        if (Http::appBuild() < (int) config('min_app_build', 5)) {
+        if (Billing::enforced() && Http::appBuild() < (int) config('min_app_build', 5)) {
             throw new ApiError('Forex Signals Live has a new version. Please update the app from Google Play to see live signals.', 426);
         }
     }

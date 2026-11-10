@@ -27,8 +27,20 @@ final class Billing
 
     // ---- entitlement --------------------------------------------------------
 
+    /**
+     * Locking is switched on with config 'premium_enforced' => true once the app
+     * update with the paywall is live on Google Play. Until then everyone keeps
+     * full access, so current users are never asked to update to a version that
+     * isn't in the store yet.
+     */
+    public static function enforced(): bool
+    {
+        return (bool) config('premium_enforced', true);
+    }
+
     public static function isPremium(array $user, ?int $now = null): bool
     {
+        if (!self::enforced()) return true;
         if (self::isComplimentary($user)) return true;
         $until = $user['premium_until'] ?? null;
         return $until !== null && strtotime($until . ' UTC') > ($now ?? time());
@@ -51,8 +63,8 @@ final class Billing
         $premium = self::isPremium($u);
         return [
             'premium' => $premium,
-            'premium_until' => self::isComplimentary($u) ? null : iso($u['premium_until'] ?? null),
-            'premium_plan' => $premium ? ($u['premium_plan'] ?? (self::isComplimentary($u) ? 'complimentary' : null)) : null,
+            'premium_until' => self::isComplimentary($u) || !self::enforced() ? null : iso($u['premium_until'] ?? null),
+            'premium_plan' => $premium ? ($u['premium_plan'] ?? (self::isComplimentary($u) || !self::enforced() ? 'complimentary' : null)) : null,
             'billing_account_id' => self::accountTag((int) $u['id']),
         ];
     }

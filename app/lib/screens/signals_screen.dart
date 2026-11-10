@@ -173,7 +173,7 @@ class _SignalsScreenState extends State<SignalsScreen> {
                         icon: Icons.radar_rounded,
                         title: 'No active signals right now',
                         message:
-                            'The engine scans 8 markets every 20 minutes and only publishes strong setups. We\'ll notify you when one appears.',
+                            'The engine checks 8 markets on the 4-hour chart and only publishes high-quality setups, usually a few a week. We\'ll notify you when one appears.',
                       ),
               )
             else

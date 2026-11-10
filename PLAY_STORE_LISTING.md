@@ -23,42 +23,38 @@ If you still decide to take the risk, the version that fits is `Free Forex Signa
 
 ## Short description — 75 / 80 characters
 ```
-Free forex & gold signals with entry, stop loss & take profit. Live alerts.
+Forex & gold signals with entry, stop loss & take profit. 7-day free trial.
 ```
 
-## Full description — 2,541 / 4,000 characters
+## Full description — 2,734 / 4,000 characters
+Updated for version 1.1.0 (Premium). Google rejects listings that call a paid feature free, so "free" now refers only to the trial and the free features.
 ```
-Get free forex signals and gold signals with a clear trade plan: entry price, stop loss and two take profit targets for every signal. Forex Signals Live scans the major currency pairs and gold (XAU/USD) around the clock and alerts you the moment a new buy or sell signal is published.
+Get forex signals and gold signals with a clear trade plan: entry price, stop loss and two take profit targets for every signal. Forex Signals Live watches the major currency pairs and gold (XAU/USD) around the clock and alerts you the moment a new buy or sell signal is published. Start with a 7-day free trial.
 
-WHAT YOU GET
-• Free forex signals for EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF, NZD/USD and gold (XAU/USD)
-• Buy and sell signals with entry, stop loss (SL), take profit 1 and take profit 2 (TP1, TP2)
-• Instant push notifications and email alerts for new signals
-• Trade updates when TP1, TP2 or the stop loss is hit
-• Live chart for every signal with risk and reward zones
-• Signal strength score and the reasons behind each trade
+PREMIUM: LIVE SIGNALS
+• Live buy and sell signals for EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF, NZD/USD and gold (XAU/USD)
+• Entry, stop loss (SL), take profit 1 and take profit 2 (TP1, TP2) the moment each signal is published
+• Instant push notifications and email alerts with the full levels
+• Live chart for every signal with risk and reward zones, plus the reasons behind each trade
+• 7-day free trial, then $5 per month, or $36 per year ($3 a month). Cancel anytime in Google Play.
+
+FREE FOR EVERYONE
+• Full track record: every closed signal with its entry, result and pips
 • Daily, weekly and monthly performance reports
+• Alerts when signals hit TP1, TP2 or the stop loss
+• Lot size calculator, pip value calculator, market sessions clock and a watchlist with live prices
 
 A TRACK RECORD YOU CAN CHECK
 Every signal is recorded automatically and closed by fixed rules, win or loss. Nothing is edited or deleted. See the win rate, total pips, profit factor and growth curve, and open any day, week or month to see every trade in it.
 
 HOW THE SIGNALS WORK
-Signals come from technical analysis on the 1-hour chart: the 200 EMA trend, the 20 and 50 EMA, MACD momentum and RSI. Only setups with a strong score are published. The stop loss and take profit levels are based on ATR (average true range), so they adapt to how much the market is moving. The full method is explained inside the app.
-
-TRADING TOOLS
-• Lot size calculator: position size from your balance, risk % and stop loss
-• Pip value calculator for every pair and gold
-• Forex market sessions: see when Sydney, Tokyo, London and New York are open
-• Watchlist with live prices and daily change
+Signals come from technical analysis on the 4-hour chart. For currency pairs, the engine looks for price stretched outside the Bollinger Bands in a calm, ranging market (low ADX) with RSI at an extreme, and targets a move back toward the average. For gold, which tends to trend, it follows the trend (200, 50 and 20 EMA, MACD, RSI) and only enters after a pullback to the 20 EMA. Stop loss and take profit levels are based on ATR (average true range), so they adapt to how much the market is moving. The full method is explained inside the app.
 
 NOTIFICATIONS YOUR WAY
 Choose push notifications, email alerts or both. Pick the pairs you follow, and turn the daily, weekly and monthly reports on or off.
 
 GOOD FOR BEGINNERS
 Each signal shows exactly where to enter, where to place your stop loss and where to take profit, plus a lot size calculator so you never risk too much on one trade. Practise on a demo account with your broker first.
-
-FREE TO USE
-Forex Signals Live is free. Create an account with your email to get signals, alerts and reports.
 
 RISK WARNING
 Trading forex and gold on margin carries a high level of risk and may not be suitable for all investors. Signals are automated technical analysis for educational and informational purposes only. They are not financial advice. Past results do not guarantee future results. Only trade with money you can afford to lose.
@@ -107,7 +103,7 @@ Prepared screenshot captions, in order:
 7. **Markets and trading sessions** - demo Markets tab
 
 ## Keywords this listing targets
-Primary: forex signals, free forex signals, forex signals live, gold signals, xauusd signals, fx signals, trading signals, buy sell signals
+Primary: forex signals, forex signals free trial, forex signals live, gold signals, xauusd signals, fx signals, trading signals, buy sell signals
 Secondary: forex alerts, forex trading app, stop loss take profit, tp sl signals, eurusd signals, gbpusd signals, forex for beginners, lot size calculator, pip calculator, forex market sessions, forex reports
 
 Google Play has no keyword field. It ranks on the **title** (strongest), **short description**, then the **full description**. Each main keyword above appears there naturally 2–4 times. Adding more repetitions counts as keyword stuffing, which the policy prohibits and which can lower ranking.

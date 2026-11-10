@@ -47,6 +47,9 @@ return [
         // Long random string; the Pub/Sub push URL is https://yourdomain.com/api/billing/rtdn?secret=THIS_VALUE
         'rtdn_secret' => '',
     ],
+    // false = everyone keeps full access (use while the paywall app update is in Google review).
+    // Set to true the day version 1.1.0 is live on Google Play to start locking live signals.
+    'premium_enforced' => false,
     // Accounts that get Premium free (you, testers, the Google Play reviewer account).
     'premium_emails' => [],
     // App builds older than this are asked to update before they can open live signals.

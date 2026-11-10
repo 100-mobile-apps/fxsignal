@@ -38,6 +38,13 @@ final class Notify
         $emoji = $s['direction'] === 'BUY' ? '🟢' : '🔴';
         $data = ['signal_id' => $s['id'], 'type' => 'signal'];
 
+        if (!Billing::enforced()) {
+            // Before launch: everyone keeps the full alert, exactly as before the update.
+            Fcm::sendToTopic('signals_' . topic_key($pair),
+                "$emoji {$s['direction']} $pair @ " . $f($s['entry']),
+                'SL ' . $f($s['stop_loss']) . ' · TP1 ' . $f($s['tp1']) . ' · TP2 ' . $f($s['tp2']) . " · {$s['confidence']}% strength",
+                $data);
+        } else
         // Topic = every install that follows this pair, including free users and old app versions: teaser only.
         Fcm::sendToTopic('signals_' . topic_key($pair),
             "🔒 New {$s['direction']} signal on $pair",

@@ -137,6 +137,14 @@ $fresh = Db::one('SELECT * FROM signals WHERE id = ?', [$sid]);
 [$subj, $html, $text] = EmailTemplates::lockedSignal($fresh, 'Free', 'https://x/unsub');
 check('free-user signal email contains no levels', !str_contains($html . $text, '1.0842') && !str_contains($html . $text, '1.0811') && str_contains($subj, 'EUR/USD'));
 
+echo "== Launch switch ==\n";
+$GLOBALS['__CONFIG']['premium_enforced'] = false;
+[$c, $r] = call(fn() => Signals::list(), null, $freeTok, 0);
+check('before launch, old app still gets live signals with full levels', $c === 200 && $r['items'][0]['entry'] === 1.0842);
+$GLOBALS['__CONFIG']['premium_enforced'] = true;
+[$c, $r] = call(fn() => Signals::list(), null, $freeTok, 0);
+check('after launch, old app is asked to update', $c === 426);
+
 echo "\nRESULT: $pass passed, $fail failed\n";
 @unlink(__DIR__ . '/billing.db');
 @unlink(__DIR__ . '/billing_config.php');
