@@ -1,0 +1,24 @@
+name: fetch-backtest-data
+on:
+  push:
+    branches: [tools/fetch-data]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm init -y >/dev/null && npm i dukascopy-node@1 >/dev/null
+      - run: node tool/fetch.js > fetch.log 2>&1 || (cat fetch.log; exit 1)
+      - run: cat fetch.log; ls -la out
+      - name: Push data
+        run: |
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git checkout --orphan out-data
+          git rm -rqf . || true
+          cp out/* . && cp fetch.log .
+          git add *.csv fetch.log && git commit -qm "hourly data" && git push -f origin out-data
