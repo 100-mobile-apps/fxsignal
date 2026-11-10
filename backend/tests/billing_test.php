@@ -145,6 +145,17 @@ $GLOBALS['__CONFIG']['premium_enforced'] = true;
 [$c, $r] = call(fn() => Signals::list(), null, $freeTok, 0);
 check('after launch, old app is asked to update', $c === 426);
 
+echo "== Test-account lock before launch ==\n";
+$GLOBALS['__CONFIG']['premium_enforced'] = false;
+$GLOBALS['__CONFIG']['premium_test_emails'] = ['free@example.com'];
+[$c, $r] = call(fn() => Signals::list(), null, $freeTok);
+check('test account sees the lock before launch', $c === 200 && $r['items'][0]['entry'] === null);
+[$c, $r] = call(fn() => Signals::list(), null, $otherTok);
+check('other users stay unlocked before launch', $c === 200 && $r['items'][0]['entry'] === 1.0842);
+[$c, $r] = call(fn() => Signals::list(), null, $otherTok, 0);
+check('old apps unaffected before launch', $c === 200);
+$GLOBALS['__CONFIG']['premium_enforced'] = true;
+
 echo "\nRESULT: $pass passed, $fail failed\n";
 @unlink(__DIR__ . '/billing.db');
 @unlink(__DIR__ . '/billing_config.php');

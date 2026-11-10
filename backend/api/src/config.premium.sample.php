@@ -18,5 +18,7 @@ return [
     ],
     // Accounts that get Premium free (owner, testers, Google Play reviewer).
     'premium_emails' => ['you@example.com'],
+    // Before launch: the paywall is switched on ONLY for these accounts (testing).
+    'premium_test_emails' => [],
     'min_app_build' => 5,
 ];

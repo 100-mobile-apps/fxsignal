@@ -38,9 +38,20 @@ final class Billing
         return (bool) config('premium_enforced', false);
     }
 
+    /**
+     * Lock applies to this user: everyone once 'premium_enforced' is true, or only the
+     * accounts in 'premium_test_emails' before launch (to test the paywall safely).
+     */
+    public static function enforcedFor(array $user): bool
+    {
+        if (self::enforced()) return true;
+        $tests = array_map('strtolower', (array) config('premium_test_emails', []));
+        return $tests && in_array(strtolower((string) ($user['email'] ?? '')), $tests, true);
+    }
+
     public static function isPremium(array $user, ?int $now = null): bool
     {
-        if (!self::enforced()) return true;
+        if (!self::enforcedFor($user)) return true;
         if (self::isComplimentary($user)) return true;
         $until = $user['premium_until'] ?? null;
         return $until !== null && strtotime($until . ' UTC') > ($now ?? time());
@@ -63,8 +74,8 @@ final class Billing
         $premium = self::isPremium($u);
         return [
             'premium' => $premium,
-            'premium_until' => self::isComplimentary($u) || !self::enforced() ? null : iso($u['premium_until'] ?? null),
-            'premium_plan' => $premium ? ($u['premium_plan'] ?? (self::isComplimentary($u) || !self::enforced() ? 'complimentary' : null)) : null,
+            'premium_until' => self::isComplimentary($u) || !self::enforcedFor($u) ? null : iso($u['premium_until'] ?? null),
+            'premium_plan' => $premium ? ($u['premium_plan'] ?? (self::isComplimentary($u) || !self::enforcedFor($u) ? 'complimentary' : null)) : null,
             'billing_account_id' => self::accountTag((int) $u['id']),
         ];
     }
