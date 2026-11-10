@@ -20,5 +20,5 @@ jobs:
           git config user.name ci; git config user.email ci@users.noreply.github.com
           git checkout --orphan out-data
           git rm -rqf . || true
-          cp out/* . && cp fetch.log .
+          cp out/* .
           git add *.csv fetch.log && git commit -qm "hourly data" && git push -f origin out-data
