@@ -76,7 +76,7 @@ Back up first: cPanel → **Backup** → download the database, and zip the `api
 
 ## Part 4: Build and release the app
 
-1. **Set the API address once** (GitHub repo → **Settings → Secrets and variables → Actions → Variables → New variable**): `API_URL` = `https://YOUR-DOMAIN/api`. A build without it runs in **demo mode**, so never upload a demo build.
+1. **API address**: the build uses `https://forexsignal.bulksend.top/api` (set in `.github/workflows/build.yml`; a repository variable `API_URL` overrides it).
 2. **Signing**: the update must be signed with the **same upload key** as the current Play version. Either:
    - send the key to Claude to sign the AAB, or
    - add these repository **secrets** so GitHub signs it automatically: `FX_UPLOAD_KEYSTORE_B64` (run `base64 -w0 upload.jks` on the .jks), `FX_RELEASE_STORE_PASSWORD`, `FX_RELEASE_KEY_ALIAS`, `FX_RELEASE_KEY_PASSWORD`.

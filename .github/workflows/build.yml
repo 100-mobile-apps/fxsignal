@@ -56,7 +56,7 @@ jobs:
         env:
           # Settings → Secrets and variables → Actions → Variables → API_URL (e.g. https://yourdomain.com/api).
           # Empty = demo build (offline simulation) — never upload a demo build to Google Play.
-          API_URL: ${{ vars.API_URL }}
+          API_URL: ${{ vars.API_URL || 'https://forexsignal.bulksend.top/api' }}
         run: |
           flutter build appbundle --release --dart-define=API_URL=$API_URL 2>&1 | tee ../build.log
           flutter build apk --release --dart-define=API_URL=$API_URL 2>&1 | tee -a ../build.log
