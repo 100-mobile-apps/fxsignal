@@ -18,7 +18,7 @@ jobs:
         working-directory: app
         shell: bash   # -eo pipefail: a failing analyze/test/build fails the job
     env:
-      HAS_KEY: ${{ secrets.FX_UPLOAD_KEYSTORE_B64 != '' }}
+      HAS_KEY: ${{ secrets.UPLOAD_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v5
       - name: Free disk space
@@ -44,11 +44,11 @@ jobs:
       - name: Upload key (from repository secrets, if set)
         if: env.HAS_KEY == 'true'
         run: |
-          echo "${{ secrets.FX_UPLOAD_KEYSTORE_B64 }}" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/upload.jks"
           echo "FX_RELEASE_STORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
-          echo "FX_RELEASE_STORE_PASSWORD=${{ secrets.FX_RELEASE_STORE_PASSWORD }}" >> "$GITHUB_ENV"
-          echo "FX_RELEASE_KEY_ALIAS=${{ secrets.FX_RELEASE_KEY_ALIAS }}" >> "$GITHUB_ENV"
-          echo "FX_RELEASE_KEY_PASSWORD=${{ secrets.FX_RELEASE_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "FX_RELEASE_STORE_PASSWORD=${{ secrets.UPLOAD_STORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "FX_RELEASE_KEY_ALIAS=${{ secrets.UPLOAD_KEY_ALIAS }}" >> "$GITHUB_ENV"
+          echo "FX_RELEASE_KEY_PASSWORD=${{ secrets.UPLOAD_KEY_PASSWORD }}" >> "$GITHUB_ENV"
       - name: No upload key yet - test signing
         if: env.HAS_KEY != 'true'
         run: echo "FX_CI_DEBUG_SIGNING=1" >> "$GITHUB_ENV"

@@ -81,7 +81,7 @@ Back up first: cPanel → **Backup** → download the database, and zip the `api
 1. **API address**: the build uses `https://forexsignal.bulksend.top/api` (set in `.github/workflows/build.yml`; a repository variable `API_URL` overrides it).
 2. **Signing**: the update must be signed with the **same upload key** as the current Play version. Either:
    - send the key to Claude to sign the AAB, or
-   - add these repository **secrets** so GitHub signs it automatically: `FX_UPLOAD_KEYSTORE_B64` (run `base64 -w0 upload.jks` on the .jks), `FX_RELEASE_STORE_PASSWORD`, `FX_RELEASE_KEY_ALIAS`, `FX_RELEASE_KEY_PASSWORD`.
+   - add these repository **secrets** so GitHub signs it automatically: `UPLOAD_KEYSTORE_BASE64`, `UPLOAD_STORE_PASSWORD`, `UPLOAD_KEY_ALIAS`, `UPLOAD_KEY_PASSWORD` (already set in this repo).
 3. Every push to `main` or `release/**` builds `app-release.aab` and `app-release.apk` into the **`out-aab`** branch, with `BUILD_INFO.txt` showing whether it used the upload key and which API URL.
 4. **Test on your phone first** using the internal testing track:
    - [ ] Log in with a free account. Live signals show locked; tapping one opens the paywall.
