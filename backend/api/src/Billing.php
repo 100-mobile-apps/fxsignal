@@ -35,7 +35,7 @@ final class Billing
      */
     public static function enforced(): bool
     {
-        return (bool) config('premium_enforced', true);
+        return (bool) config('premium_enforced', false);
     }
 
     public static function isPremium(array $user, ?int $now = null): bool

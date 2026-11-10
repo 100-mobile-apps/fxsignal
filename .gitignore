@@ -4,3 +4,4 @@ backend/api/src/*service-account*.json
 *.jks
 *.keystore
 key.properties
+backend/api/src/config.premium.php

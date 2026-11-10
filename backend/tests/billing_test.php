@@ -12,7 +12,7 @@ file_put_contents(__DIR__ . '/billing_config.php', '<?php return ' . var_export(
     'pairs' => ['EUR/USD', 'XAU/USD'],
     'play' => ['package_name' => 'com.forexsignalslive.forex_signals', 'products' => ['fx_premium_monthly', 'fx_premium_yearly'], 'rtdn_secret' => 'rtdn-secret'],
     'premium_emails' => ['reviewer@example.com'],
-    'min_app_build' => 5,
+    'min_app_build' => 5, 'premium_enforced' => true,
     'fcm' => ['project_id' => '', 'service_account_file' => ''],
     'mail_disabled' => true, 'debug' => true,
 ], true) . ';');

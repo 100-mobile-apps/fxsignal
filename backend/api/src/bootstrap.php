@@ -11,6 +11,10 @@ if (!file_exists($configFile)) {
     exit;
 }
 $GLOBALS['__CONFIG'] = require $configFile;
+// Optional settings file without secrets (Premium/strategy settings); overrides config.php.
+if (!getenv('FX_CONFIG') && is_file(__DIR__ . '/config.premium.php')) {
+    $GLOBALS['__CONFIG'] = array_replace($GLOBALS['__CONFIG'], (array) require __DIR__ . '/config.premium.php');
+}
 
 function config(string $key, $default = null)
 {
