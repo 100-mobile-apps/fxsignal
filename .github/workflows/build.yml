@@ -49,6 +49,20 @@ jobs:
           echo "FX_RELEASE_STORE_PASSWORD=${{ secrets.UPLOAD_STORE_PASSWORD }}" >> "$GITHUB_ENV"
           echo "FX_RELEASE_KEY_ALIAS=${{ secrets.UPLOAD_KEY_ALIAS }}" >> "$GITHUB_ENV"
           echo "FX_RELEASE_KEY_PASSWORD=${{ secrets.UPLOAD_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+      - name: Check upload key (aliases and fingerprints only)
+        if: env.HAS_KEY == 'true'
+        env:
+          SP: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+          WANT: ${{ secrets.UPLOAD_KEY_ALIAS }}
+        run: |
+          keytool -list -v -keystore "$FX_RELEASE_STORE_FILE" -storepass "$SP" 2>&1 \
+            | grep -E "^Alias name|SHA1:|SHA256:|^Owner|^Valid|Keystore type" | tee ../keystore.log
+          ALIASES=$(keytool -list -keystore "$FX_RELEASE_STORE_FILE" -storepass "$SP" 2>/dev/null | grep -E "PrivateKeyEntry" | cut -d, -f1)
+          if ! echo "$ALIASES" | grep -qx "$WANT"; then
+            N=$(echo "$ALIASES" | grep -c . || true)
+            echo "Secret alias not in keystore; keystore has $N key(s)." | tee -a ../keystore.log
+            if [ "$N" = "1" ]; then echo "FX_RELEASE_KEY_ALIAS=$ALIASES" >> "$GITHUB_ENV"; echo "Using the keystore's only alias." | tee -a ../keystore.log; fi
+          fi
       - name: No upload key yet - test signing
         if: env.HAS_KEY != 'true'
         run: echo "FX_CI_DEBUG_SIGNING=1" >> "$GITHUB_ENV"
@@ -68,7 +82,7 @@ jobs:
           mkdir -p /tmp/out
           cp app/build/app/outputs/bundle/release/app-release.aab /tmp/out/ 2>/dev/null || true
           cp app/build/app/outputs/flutter-apk/app-release.apk /tmp/out/ 2>/dev/null || true
-          cp analyze.log test.log build.log /tmp/out/ 2>/dev/null || true
+          cp analyze.log test.log build.log keystore.log /tmp/out/ 2>/dev/null || true
           echo "commit=${GITHUB_SHA} signed_with_upload_key=${HAS_KEY} run=${GITHUB_RUN_ID} $(cat api.txt 2>/dev/null)" > /tmp/out/BUILD_INFO.txt
           git config user.name ci; git config user.email ci@users.noreply.github.com
           git checkout --orphan out-aab
