@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/config.dart';
 import '../core/format.dart';
+import '../data/api.dart';
+import '../models/models.dart';
 import '../core/theme.dart';
 import '../state/data_stores.dart';
 import '../state/session_store.dart';
@@ -116,7 +119,9 @@ class _SignalsScreenState extends State<SignalsScreen> {
                   rightSelected: _showHistory,
                   onChanged: (v) => setState(() => _showHistory = v),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
+                _MarketFilter(user: user),
+                const SizedBox(height: 14),
                 if (_showHistory && hiddenCount > 0)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +256,7 @@ class _UnlockBanner extends StatelessWidget {
                     Text('Unlock live signals',
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1A1204))),
                     SizedBox(height: 2),
-                    Text('7-day free trial · from \$3/month',
+                    Text('Gold, crypto and the strongest forex setups',
                         style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF3A2A08))),
                   ],
                 ),
@@ -259,7 +264,7 @@ class _UnlockBanner extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                 decoration: BoxDecoration(color: const Color(0xFF1A1204), borderRadius: BorderRadius.circular(30)),
-                child: const Text('Try free',
+                child: const Text('Upgrade',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.gold)),
               ),
             ],
@@ -430,6 +435,84 @@ class _Segmented extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Row(children: [tab(left, !rightSelected, false), tab(right, rightSelected, true)]),
+    );
+  }
+}
+
+/// Lets users choose which kinds of signals they see (and get alerts for).
+class _MarketFilter extends StatefulWidget {
+  final AppUser? user;
+  const _MarketFilter({required this.user});
+  @override
+  State<_MarketFilter> createState() => _MarketFilterState();
+}
+
+class _MarketFilterState extends State<_MarketFilter> {
+  static const _kinds = {
+    'Forex': ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF', 'NZD/USD'],
+    'Gold': ['XAU/USD'],
+    'Crypto': ['BTC/USD', 'ETH/USD'],
+  };
+  bool _saving = false;
+
+  Set<String> _selected() {
+    final mine = widget.user?.signalPairs;
+    if (mine == null) return _kinds.keys.toSet();
+    return {for (final e in _kinds.entries) if (e.value.any(mine.contains)) e.key};
+  }
+
+  Future<void> _set(Set<String> kinds) async {
+    if (kinds.isEmpty || _saving) return;
+    final api = context.read<Api>();
+    final session = context.read<SessionStore>();
+    final store = context.read<SignalsStore>();
+    setState(() => _saving = true);
+    try {
+      final all = kinds.length == _kinds.length;
+      final pairs = all
+          ? null
+          : [for (final k in kinds) ..._kinds[k]!].where(AppConfig.pairs.contains).toList();
+      session.setUser(await api.setSignalPairs(pairs));
+      await store.refresh();
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, e.message);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sel = _selected();
+    final all = sel.length == _kinds.length;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(children: [
+        ChoiceChip(
+          label: const Text('All'),
+          selected: all,
+          onSelected: _saving || all ? null : (_) => _set(_kinds.keys.toSet()),
+        ),
+        for (final k in _kinds.keys) ...[
+          const SizedBox(width: 8),
+          FilterChip(
+            label: Text(k),
+            selected: !all && sel.contains(k),
+            onSelected: _saving
+                ? null
+                : (on) {
+                    // From "All", tapping a kind shows only that kind.
+                    final next = all ? {k} : ({...sel}..remove(k));
+                    if (!all && on) next.add(k);
+                    _set(next.isEmpty ? _kinds.keys.toSet() : next);
+                  },
+          ),
+        ],
+        if (_saving) ...[
+          const SizedBox(width: 10),
+          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+        ],
+      ]),
     );
   }
 }

@@ -110,7 +110,7 @@ class ProfileScreen extends StatelessWidget {
                     onTap: () => context.read<BillingStore>().manage()),
             ] else ...[
               _Tile(Icons.workspace_premium_rounded, 'Unlock live signals',
-                  subtitle: '7-day free trial · \$5/month or \$36/year',
+                  subtitle: 'Gold, crypto, strongest forex signals and the trading bot',
                   onTap: () => openPaywall(context)),
               _Tile(Icons.restore_rounded, 'Restore purchase',
                   subtitle: 'Already subscribed on this Google account?',

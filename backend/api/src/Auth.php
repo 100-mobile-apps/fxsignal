@@ -49,6 +49,7 @@ final class Auth
                 ],
             ],
             'watchlist' => $u['watchlist'] ? json_decode($u['watchlist'], true) : config('pairs'),
+            'signal_pairs' => Signals::chosenPairs($u),
         ] + Billing::publicFields($u);
     }
 

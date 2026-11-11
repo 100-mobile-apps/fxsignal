@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   email_monthly TINYINT(1) NOT NULL DEFAULT 1,
   email_marketing TINYINT(1) NOT NULL DEFAULT 1,
   watchlist TEXT NULL,
+  signal_pairs TEXT NULL,
   premium_until DATETIME NULL,
   premium_plan VARCHAR(40) NULL,
   created_at DATETIME NOT NULL,
@@ -162,4 +163,13 @@ CREATE TABLE IF NOT EXISTS user_events (
   created_at DATETIME NOT NULL,
   INDEX (kind, created_at),
   INDEX (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS signal_unlocks (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  signal_id INT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL,
+  UNIQUE (user_id, signal_id),
+  INDEX (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

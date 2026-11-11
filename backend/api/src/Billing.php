@@ -71,7 +71,66 @@ final class Billing
     /** Should this live signal's levels be hidden from this user? */
     public static function lockedFor(array $user, array $signal): bool
     {
-        return $signal['status'] === 'running' && self::signalIsPremium($signal) && !self::isPremium($user);
+        return $signal['status'] === 'running' && self::signalIsPremium($signal) && !self::isPremium($user)
+            && !in_array((int) $signal['id'], self::unlockedIds((int) $user['id']), true);
+    }
+
+    // ---- Free unlock: one Premium signal every N days for free users -------
+
+    private static array $unlocked = [];
+
+    public static function freeUnlockDays(): int
+    {
+        return max(0, (int) config('free_unlock_days', 14));
+    }
+
+    /** Signals this user opened with a free unlock. */
+    public static function unlockedIds(int $userId): array
+    {
+        if (!array_key_exists($userId, self::$unlocked)) {
+            try {
+                self::$unlocked[$userId] = array_map('intval', array_column(
+                    Db::all('SELECT signal_id FROM signal_unlocks WHERE user_id = ?', [$userId]), 'signal_id'));
+            } catch (Throwable $e) {
+                self::$unlocked[$userId] = [];
+            }
+        }
+        return self::$unlocked[$userId];
+    }
+
+    /** When the next free unlock is available (null = available now, or switched off). */
+    public static function nextFreeUnlock(array $user, ?int $now = null): ?int
+    {
+        $days = self::freeUnlockDays();
+        if ($days === 0) return null;
+        try {
+            $last = Db::one('SELECT MAX(created_at) AS t FROM signal_unlocks WHERE user_id = ?', [(int) $user['id']]);
+        } catch (Throwable $e) {
+            return null;
+        }
+        if (empty($last['t'])) return null;
+        $next = strtotime($last['t'] . ' UTC') + $days * 86400;
+        return $next > ($now ?? time()) ? $next : null;
+    }
+
+    /** POST /signals/{id}/unlock */
+    public static function freeUnlock(array $params): void
+    {
+        $user = Auth::user();
+        $days = self::freeUnlockDays();
+        if ($days === 0) throw new ApiError('Free unlocks are not available right now.', 403);
+        $row = Db::one('SELECT * FROM signals WHERE id = ?', [(int) $params['id']]);
+        if (!$row) throw new ApiError('Signal not found', 404);
+        if (self::lockedFor($user, $row)) {
+            Http::rateLimit('unlock:' . $user['id'], 5, 3600);
+            $next = self::nextFreeUnlock($user);
+            if ($next !== null) {
+                throw new ApiError('You have used your free unlock. The next one is available on ' . gmdate('j M', $next) . '.', 429);
+            }
+            Db::exec('INSERT INTO signal_unlocks (user_id, signal_id, created_at) VALUES (?, ?, ?)', [(int) $user['id'], (int) $row['id'], now()]);
+            self::$unlocked = [];
+        }
+        Http::send(['signal' => Signals::format($row, true, self::lockedFor($user, $row)), 'user' => Auth::publicUser($user)]);
     }
 
     public static function isPremium(array $user, ?int $now = null): bool
@@ -102,6 +161,8 @@ final class Billing
             'premium_until' => self::isComplimentary($u) || !self::enforcedFor($u) ? null : iso($u['premium_until'] ?? null),
             'premium_plan' => $premium ? ($u['premium_plan'] ?? (self::isComplimentary($u) || !self::enforcedFor($u) ? 'complimentary' : null)) : null,
             'billing_account_id' => self::accountTag((int) $u['id']),
+            'free_unlock_days' => $premium ? 0 : self::freeUnlockDays(),
+            'free_unlock_at' => $premium ? null : (($n = self::nextFreeUnlock($u)) ? iso(now($n)) : null),
         ];
     }
 
@@ -181,13 +242,13 @@ final class Billing
     /** Device tokens of premium users who want push alerts for this pair. */
     public static function premiumDeviceTokens(string $pair): array
     {
-        $rows = Db::all('SELECT d.token, u.id, u.email, u.premium_until, u.notify_pairs FROM devices d JOIN users u ON u.id = d.user_id
-                         WHERE u.notify_signals = 1');
+        $rows = Db::all('SELECT d.token, u.* FROM devices d JOIN users u ON u.id = d.user_id WHERE u.notify_signals = 1');
         $out = [];
         foreach ($rows as $r) {
             if (!self::isPremium($r)) continue;
             $pairs = $r['notify_pairs'] ? json_decode($r['notify_pairs'], true) : null;
             if (is_array($pairs) && !in_array($pair, $pairs, true)) continue;
+            if (!Signals::wants($r, $pair)) continue;
             $out[] = $r['token'];
         }
         return array_values(array_unique($out));

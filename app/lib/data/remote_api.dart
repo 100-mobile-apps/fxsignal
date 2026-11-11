@@ -200,6 +200,19 @@ class RemoteApi extends Api {
   }
 
   @override
+  Future<AppUser> setSignalPairs(List<String>? pairs) async =>
+      _user(await _req('PUT', '/me/signal-pairs', body: {'pairs': pairs}));
+
+  @override
+  Future<(TradeSignal, AppUser)> freeUnlock(int signalId) async {
+    final d = await _req('POST', '/signals/$signalId/unlock');
+    return (
+      TradeSignal.fromJson((d['signal'] as Map).cast<String, dynamic>()),
+      AppUser.fromJson((d['user'] as Map).cast<String, dynamic>()),
+    );
+  }
+
+  @override
   Future<Map<String, dynamic>> botConfig() async =>
       ((await _req('GET', '/health'))['bot'] as Map?)?.cast<String, dynamic>() ?? const {};
 

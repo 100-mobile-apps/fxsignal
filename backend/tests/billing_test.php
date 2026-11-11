@@ -176,6 +176,35 @@ $GLOBALS['__CONFIG']['premium_markets'] = ['XAU/USD', 'AUD/USD'];
 check('premium market list is a setting', $see($strong, $freeTok)['locked'] === true);
 unset($GLOBALS['__CONFIG']['free_max_strength'], $GLOBALS['__CONFIG']['premium_markets']);
 
+echo "== Free unlock every 2 weeks ==\n";
+$GLOBALS['__CONFIG']['free_unlock_days'] = 14;
+$unlock = function (int $id, string $tok) { return call(fn() => Billing::freeUnlock(['id' => (string) $id]), null, $tok); };
+[$c, $r] = $unlock($gold, $freeTok);
+check('free user unlocks one Premium signal', $c === 200 && $r['signal']['locked'] === false && $r['signal']['entry'] === 1.5, json_encode([$c, $r['error'] ?? null]));
+check('unlocked signal stays open on later reads', $see($gold, $freeTok)['entry'] === 1.5);
+check('next unlock date is reported', $r['user']['free_unlock_at'] !== null && $r['user']['free_unlock_days'] === 14);
+[$c, $r] = $unlock($strong, $freeTok);
+check('second unlock within 2 weeks is refused', $c === 429 && $see($strong, $freeTok)['locked'] === true, (string) $c);
+Db::exec("UPDATE signal_unlocks SET created_at = ? WHERE signal_id = ?", [now(time() - 15 * 86400), $gold]);
+[$c, $r] = $unlock($strong, $freeTok);
+check('available again after 14 days', $c === 200 && $r['signal']['locked'] === false);
+$GLOBALS['__CONFIG']['free_unlock_days'] = 0;
+[$c] = $unlock($weak, $freeTok);
+check('admin can switch free unlocks off', $c === 403);
+unset($GLOBALS['__CONFIG']['free_unlock_days']);
+
+echo "== Markets each user chooses to see ==\n";
+[$c, $r] = call(fn() => Signals::setPairs(), ['pairs' => ['XAU/USD']], $freeTok);
+check('user picks gold only', $c === 200 && $r['user']['signal_pairs'] === ['XAU/USD'], json_encode($r));
+[$c, $r] = call(fn() => Signals::list(), null, $freeTok);
+check('list shows only chosen markets', $c === 200 && $r['items'] && !array_diff(array_column($r['items'], 'pair'), ['XAU/USD']), json_encode(array_column($r['items'], 'pair')));
+$fu = Db::one('SELECT * FROM users WHERE id = ?', [$free['id']]);
+check('alerts follow the choice', !Signals::wants($fu, 'EUR/USD') && Signals::wants($fu, 'XAU/USD'));
+[$c, $r] = call(fn() => Signals::setPairs(), ['pairs' => null], $freeTok);
+check('reset to all markets', $c === 200 && $r['user']['signal_pairs'] === null);
+[$c] = call(fn() => Signals::setPairs(), ['pairs' => ['FOO/BAR']], $freeTok);
+check('unknown markets are rejected', $c === 422);
+
 echo "\nRESULT: $pass passed, $fail failed\n";
 @unlink(__DIR__ . '/billing.db');
 @unlink(__DIR__ . '/billing_config.php');

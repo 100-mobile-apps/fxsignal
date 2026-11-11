@@ -73,6 +73,11 @@ final class Signals
         if (!empty($_GET['pair'])) {
             $where .= ' AND pair = ?';
             $params[] = (string) $_GET['pair'];
+        } elseif (($mine = self::chosenPairs($user)) !== null && empty($_GET['all'])) {
+            // The markets this user chose to see (Signals screen filter)
+            if (!$mine) $mine = ['-'];
+            $where .= ' AND pair IN (' . implode(',', array_fill(0, count($mine), '?')) . ')';
+            array_push($params, ...$mine);
         }
         $order = $status === 'closed' ? 'closed_at DESC, id DESC' : 'opened_at DESC, id DESC';
         $offset = ($page - 1) * $per;
@@ -83,6 +88,36 @@ final class Signals
             'page' => $page,
             'has_more' => $hasMore,
         ]);
+    }
+
+    /** Markets a user chose to see; null = all. */
+    public static function chosenPairs(array $user): ?array
+    {
+        $raw = $user['signal_pairs'] ?? null;
+        if (!$raw) return null;
+        $pairs = json_decode((string) $raw, true);
+        return is_array($pairs) ? array_values(array_filter($pairs, 'is_string')) : null;
+    }
+
+    public static function wants(array $user, string $pair): bool
+    {
+        $mine = self::chosenPairs($user);
+        return $mine === null || in_array($pair, $mine, true);
+    }
+
+    /** PUT /me/signal-pairs {pairs: [...] | null} */
+    public static function setPairs(): void
+    {
+        $u = Auth::user();
+        $pairs = Http::body()['pairs'] ?? null;
+        if ($pairs !== null) {
+            if (!is_array($pairs)) throw new ApiError('pairs must be a list', 422);
+            $pairs = array_values(array_intersect((array) config('pairs', []), $pairs));
+            if (!$pairs) throw new ApiError('Choose at least one market.', 422);
+            if (count($pairs) === count((array) config('pairs', []))) $pairs = null;
+        }
+        Db::exec('UPDATE users SET signal_pairs = ? WHERE id = ?', [$pairs === null ? null : json_encode($pairs), $u['id']]);
+        Account::me();
     }
 
     public static function show(array $params): void

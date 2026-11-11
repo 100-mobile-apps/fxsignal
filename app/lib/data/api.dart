@@ -41,6 +41,12 @@ abstract class Api {
   /// Which developer links to show (server-controlled). Keys: coffee, whatsapp, hire.
   Future<Map<String, bool>> promo();
 
+  /// Markets to show on the Signals screen (null = all).
+  Future<AppUser> setSignalPairs(List<String>? pairs);
+
+  /// Uses the free-user unlock on one Premium signal.
+  Future<(TradeSignal, AppUser)> freeUnlock(int signalId);
+
   /// Trading bot switches from the server (/health → bot).
   Future<Map<String, dynamic>> botConfig();
 

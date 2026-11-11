@@ -131,6 +131,18 @@ class AppUser {
   /// Sent to Google Play at checkout so a purchase is tied to this account.
   final String billingAccountId;
 
+  /// Markets the user chose to see on the Signals screen (null = all).
+  final List<String>? signalPairs;
+
+  /// Free users: one Premium signal unlocked every [freeUnlockDays] days (0 = none).
+  final int freeUnlockDays;
+
+  /// When the next free unlock is available (null = available now).
+  final DateTime? freeUnlockAt;
+
+  bool get canFreeUnlock =>
+      !premium && freeUnlockDays > 0 && (freeUnlockAt == null || freeUnlockAt!.isBefore(DateTime.now()));
+
   const AppUser({
     required this.id,
     required this.name,
@@ -143,6 +155,9 @@ class AppUser {
     this.premiumUntil,
     this.premiumPlan,
     this.billingAccountId = '',
+    this.signalPairs,
+    this.freeUnlockDays = 0,
+    this.freeUnlockAt,
   });
 
   factory AppUser.fromJson(Map<String, dynamic> j) => AppUser(
@@ -158,6 +173,9 @@ class AppUser {
         premiumUntil: _t(j['premium_until']),
         premiumPlan: j['premium_plan'] as String?,
         billingAccountId: j['billing_account_id'] as String? ?? '',
+        signalPairs: (j['signal_pairs'] as List?)?.cast<String>(),
+        freeUnlockDays: (j['free_unlock_days'] as num?)?.toInt() ?? 0,
+        freeUnlockAt: _t(j['free_unlock_at']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -172,6 +190,9 @@ class AppUser {
         'premium_until': premiumUntil?.toIso8601String(),
         'premium_plan': premiumPlan,
         'billing_account_id': billingAccountId,
+        'signal_pairs': signalPairs,
+        'free_unlock_days': freeUnlockDays,
+        'free_unlock_at': freeUnlockAt?.toIso8601String(),
       };
 
   AppUser copyWith(
@@ -192,6 +213,9 @@ class AppUser {
         premiumUntil: premiumUntil,
         premiumPlan: premiumPlan,
         billingAccountId: billingAccountId,
+        signalPairs: signalPairs,
+        freeUnlockDays: freeUnlockDays,
+        freeUnlockAt: freeUnlockAt,
       );
 }
 

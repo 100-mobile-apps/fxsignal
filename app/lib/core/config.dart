@@ -10,11 +10,11 @@ class AppConfig {
 
   static const String appName = 'Forex Signals Live';
   static const String supportEmail = 'swalafblog@gmail.com';
-  static const String version = '1.2.0';
+  static const String version = '1.2.1';
 
-  /// Must match the build number in pubspec.yaml (version: 1.2.0+6). The server
+  /// Must match the build number in pubspec.yaml (version: 1.2.1+7). The server
   /// asks app builds older than its 'min_app_build' to update.
-  static const int build = 6;
+  static const int build = 7;
 
   // Google Play subscription products (Play Console → Monetize → Subscriptions).
   static const String monthlyProduct = 'fx_premium_monthly';

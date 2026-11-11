@@ -143,10 +143,10 @@ HTML;
             . '<div style="margin-top:6px;font-size:13px;color:#8A93A8">Strength ' . (int) $s['confidence'] . '% · Published ' . gmdate('M j, H:i', strtotime($s['opened_at'] . ' UTC')) . ' UTC</div>'
             . '<div style="margin-top:18px;padding:16px;border-radius:12px;background:#151D2E;border:1px solid #F5B942;color:#F4F6FB;font-size:14px;line-height:1.55">'
             . '🔒 The entry, stop loss, TP1 and TP2 for this signal are for Premium members.<br>'
-            . '<span style="color:#AEB6C8">Start your 7-day free trial in the app, then ' . self::e(self::priceLine()) . '.</span></div>'
+            . '<span style="color:#AEB6C8">Unlock it in the app: ' . self::e(self::priceLine()) . '.</span></div>'
             . self::button('Open the app to unlock');
         $text = "New signal: {$s['direction']} $pair ({$s['confidence']}% strength)\n\n"
-            . "The entry, stop loss and take profit are for Premium members. Open Forex Signals Live to start your 7-day free trial.\n\nUnsubscribe: $unsub";
+            . "The entry, stop loss and take profit are for Premium members. Open Forex Signals Live to unlock them.\n\nUnsubscribe: $unsub";
         $html = self::layout("{$s['direction']} $pair — unlock the levels in the app", $inner, $unsub,
             "You're getting this because new-signal emails are on for " . self::e($pair) . '.');
         return [$subject, $html, $text];
@@ -258,12 +258,12 @@ HTML;
             'welcome2' => ['Our track record, in the open', 'Check the results page', [
                 'Every closed signal stays in the app with its result in pips, wins and losses alike, so you can judge the strategy yourself.',
                 'Use the risk calculator in Tools to size each trade so a stop loss never costs more than you planned.'], 'See the results', $store],
-            'welcome3' => ['Try Premium free for 7 days', 'Unlock every live signal', [
+            'welcome3' => ['Unlock every live signal', 'Unlock every live signal', [
                 'Premium gives you the entry, stop loss and targets on all signals, including gold, Bitcoin and Ethereum, plus instant alerts and the trading bot.',
-                "Start with a 7-day free trial, then $prices. Cancel anytime in Google Play."], 'Start free trial', $store],
+                "Launch price: $prices. Cancel anytime in Google Play."], 'Get Premium', $store],
             'upgrade' => ['The signals you opened this week', 'You checked a few Premium signals', [
                 'You tapped on locked signals this week. Premium shows you the full levels the moment a signal is published.',
-                "Try it free for 7 days, then $prices. Cancel anytime in Google Play."], 'Unlock live signals', $store],
+                "Premium is $prices. Cancel anytime in Google Play."], 'Unlock live signals', $store],
             'winback7' => ['New signals since your last visit', "We've missed you, $first", [
                 'New signals have been published since you last opened the app. Have a look at the latest setups and results.'], 'See new signals', $store],
             'winback14' => ['Your markets moved this fortnight', 'Two weeks of signals waiting', [

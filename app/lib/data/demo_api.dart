@@ -305,9 +305,11 @@ class DemoApi extends Api {
   Future<SignalPage> signals(
       {required bool running, int page = 1, DateTime? from, DateTime? to}) async {
     await _delay();
+    final mine = (await _loadUser())?.signalPairs;
     final list = _all
         .where((s) =>
             s.isRunning == running &&
+            (mine == null || mine.contains(s.pair)) &&
             (from == null || !s.closedAt!.isBefore(from)) &&
             (to == null || s.closedAt!.isBefore(to)))
         .toList()
@@ -386,6 +388,19 @@ class DemoApi extends Api {
         .toList()
       ..sort((a, b) => a.closedAt!.compareTo(b.closedAt!));
     return computeStats(closed, _all.where((s) => s.isRunning).length, days);
+  }
+
+  @override
+  Future<AppUser> setSignalPairs(List<String>? pairs) async {
+    final j = (await me()).toJson()..['signal_pairs'] = pairs;
+    return _saveUser(AppUser.fromJson(j));
+  }
+
+  @override
+  Future<(TradeSignal, AppUser)> freeUnlock(int signalId) async {
+    final s = _all.firstWhere((s) => s.id == signalId,
+        orElse: () => throw const ApiException('Signal not found', 404));
+    return (s, await me());
   }
 
   @override

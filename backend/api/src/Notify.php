@@ -9,9 +9,10 @@ final class Notify
     {
         $allowed = ['email_signals', 'email_results', 'email_daily', 'email_weekly', 'email_monthly'];
         if (!in_array($column, $allowed, true)) throw new InvalidArgumentException($column);
-        $rows = Db::all("SELECT id, name, email, notify_pairs, premium_until FROM users WHERE email_verified_at IS NOT NULL AND $column = 1");
+        $rows = Db::all("SELECT * FROM users WHERE email_verified_at IS NOT NULL AND $column = 1");
         if ($pair === null) return $rows;
         return array_values(array_filter($rows, function ($u) use ($pair) {
+            if (!Signals::wants($u, $pair)) return false;
             if (!$u['notify_pairs']) return true;
             $pairs = json_decode($u['notify_pairs'], true);
             return !is_array($pairs) || in_array($pair, $pairs, true);

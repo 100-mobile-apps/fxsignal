@@ -87,7 +87,7 @@ class BillingStore extends ChangeNotifier {
         // Google only lists offers this user is eligible for (new customers).
         final entries = r.productDetails.where((d) => d.id == productId(plan)).toList();
         if (entries.isEmpty) continue;
-        final launch = entries.where((d) => _offerId(d) == 'launch').firstOrNull;
+        final launch = entries.where((d) => _offerId(d)?.startsWith('launch') ?? false).firstOrNull;
         final baseEntry = entries.where((d) => _offerId(d) == null).firstOrNull;
         final paid = entries.where((d) => d.rawPrice > 0).toList()
           ..sort((a, b) => b.rawPrice.compareTo(a.rawPrice));

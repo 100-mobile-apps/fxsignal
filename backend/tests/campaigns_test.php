@@ -52,7 +52,7 @@ check('weekly cap (2) holds back welcome 3', mails($new) === ['welcome1', 'welco
 Campaigns::run($t0 + 9 * $day + 7200);
 check('welcome 3 once the week has passed', mails($new) === ['welcome1', 'welcome2', 'welcome3'], json_encode(mails($new)));
 $s = subjects($new);
-check('offer email shows the launch price', str_contains((string) Db::one("SELECT text_body FROM email_queue WHERE user_id = ? AND subject LIKE 'Try Premium%'", [$new])['text_body'], '$1.50/month or $12/year'));
+check('offer email shows the launch price', str_contains((string) Db::one("SELECT text_body FROM email_queue WHERE user_id = ? AND subject LIKE 'Unlock every%'", [$new])['text_body'], '$1.50/month or $12/year'));
 check('marketing emails carry an unsubscribe link', (int) Db::one("SELECT COUNT(*) AS n FROM email_queue WHERE user_id = ? AND unsubscribe_url LIKE '%k=email_marketing%'", [$new])['n'] === 3);
 
 echo "== Upgrade offer from activity ==\n";

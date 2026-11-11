@@ -33,7 +33,7 @@ class LegalScreen extends StatelessWidget {
             ('Service',
                 'The app is provided "as is". We aim for accuracy and availability but do not guarantee that signals, prices or notifications are uninterrupted, timely or error-free.'),
             ('Premium subscription',
-                'Live signal levels (entry, stop loss and take profit) require a Premium subscription bought through Google Play: \$5 per month or \$36 per year, or the local price Google Play shows. New subscribers may get a 7-day free trial. Subscriptions renew automatically until you cancel in Google Play; cancelling keeps Premium until the end of the paid period. Refunds follow Google Play\'s refund policy. Deleting your account does not cancel the subscription.'),
+                'Live signal levels (entry, stop loss and take profit) require a Premium subscription bought through Google Play: at the price Google Play shows (launch offers may apply to new subscribers). Free members can unlock one Premium signal every two weeks. Subscriptions renew automatically until you cancel in Google Play; cancelling keeps Premium until the end of the paid period. Refunds follow Google Play\'s refund policy. Deleting your account does not cancel the subscription.'),
             ('No liability for trading losses',
                 'To the maximum extent permitted by law, we are not liable for any loss or damage arising from the use of signals or information in the app.'),
             ('Acceptable use',

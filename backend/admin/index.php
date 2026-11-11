@@ -88,6 +88,7 @@ try {
             setting_save('premium_markets', array_values(array_intersect($pairs, (array) ($_POST['premium_markets'] ?? []))));
             setting_save('free_max_strength', $strength);
             setting_save('min_confidence', $minConf);
+            setting_save('free_unlock_days', max(0, min(60, (int) ($_POST['free_unlock_days'] ?? 14))));
             setting_save('premium_test_emails', lines((string) ($_POST['premium_test_emails'] ?? '')));
             setting_save('premium_emails', lines((string) ($_POST['premium_emails'] ?? '')));
             setting_save('price_display', $prices);
@@ -198,6 +199,7 @@ button{background:linear-gradient(135deg,#f9d77e,#e0a526);color:#1a1204;border:0
     <div class="row">
       <div><label>Other markets: free up to this strength (%)</label><input type="number" name="free_max_strength" min="50" max="95" value="<?= (int) Billing::freeMaxStrength() ?>"></div>
       <div><label>Minimum strength to publish a signal (%)</label><input type="number" name="min_confidence" min="55" max="90" value="<?= (int) config('min_confidence', 65) ?>"></div>
+      <div><label>Free users: one free Premium unlock every (days, 0 = off)</label><input type="number" name="free_unlock_days" min="0" max="60" value="<?= (int) Billing::freeUnlockDays() ?>"></div>
     </div>
   </div>
 

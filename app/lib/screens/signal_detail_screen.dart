@@ -10,6 +10,8 @@ import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/signal_card.dart';
 import '../services/review_service.dart';
+import '../state/data_stores.dart';
+import '../state/session_store.dart';
 import 'legal_screen.dart';
 import 'paywall_screen.dart';
 import 'tools_screen.dart';
@@ -46,8 +48,10 @@ class _SignalDetailScreenState extends State<SignalDetailScreen> {
     try {
       final s = await context.read<Api>().signal(widget.signalId);
       if (mounted) setState(() => _s = s);
-      // Opened from a notification without a subscription: go straight to the paywall once.
-      if (s.locked && !_paywallShown && mounted) {
+      // Opened from a notification without a subscription: go straight to the paywall once
+      // (unless a free unlock is available, which the locked screen offers first).
+      final canFree = mounted && (context.read<SessionStore>().user?.canFreeUnlock ?? false);
+      if (s.locked && !_paywallShown && !canFree && mounted) {
         _paywallShown = true;
         WidgetsBinding.instance.addPostFrameCallback((_) => _unlock());
         return;
@@ -58,6 +62,28 @@ class _SignalDetailScreenState extends State<SignalDetailScreen> {
       }
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
+    }
+  }
+
+  bool _unlocking = false;
+
+  Future<void> _freeUnlock() async {
+    final api = context.read<Api>();
+    final session = context.read<SessionStore>();
+    final store = context.read<SignalsStore>();
+    setState(() => _unlocking = true);
+    try {
+      final (s, user) = await api.freeUnlock(widget.signalId);
+      session.setUser(user);
+      store.refresh(silent: true);
+      if (!mounted) return;
+      setState(() => _s = s);
+      showSnack(context, 'Unlocked. Your next free unlock is in ${user.freeUnlockDays} days.');
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, e.message);
+      await session.refreshUser();
+    } finally {
+      if (mounted) setState(() => _unlocking = false);
     }
   }
 
@@ -87,7 +113,7 @@ class _SignalDetailScreenState extends State<SignalDetailScreen> {
         ],
       ),
       body: s != null && s.locked
-          ? _LockedSignal(s: s, onUnlock: _unlock)
+          ? _LockedSignal(s: s, onUnlock: _unlock, onFreeUnlock: _freeUnlock, unlocking: _unlocking)
           : s == null
           ? Center(
               child: _error != null
@@ -453,7 +479,9 @@ class _Analysis extends StatelessWidget {
 class _LockedSignal extends StatelessWidget {
   final TradeSignal s;
   final VoidCallback onUnlock;
-  const _LockedSignal({required this.s, required this.onUnlock});
+  final VoidCallback onFreeUnlock;
+  final bool unlocking;
+  const _LockedSignal({required this.s, required this.onUnlock, required this.onFreeUnlock, this.unlocking = false});
 
   @override
   Widget build(BuildContext context) {
@@ -492,6 +520,34 @@ class _LockedSignal extends StatelessWidget {
                   textAlign: TextAlign.center, style: AppText.body),
               const SizedBox(height: 18),
               GoldButton(label: 'Unlock live signals', icon: Icons.workspace_premium_rounded, onPressed: onUnlock),
+              Builder(builder: (context) {
+                final u = context.watch<SessionStore>().user;
+                if (u == null || u.premium || u.freeUnlockDays == 0) return const SizedBox.shrink();
+                if (u.canFreeUnlock) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: OutlineButton2(
+                      label: unlocking ? 'Unlocking…' : 'Use my free unlock on this signal',
+                      icon: Icons.lock_open_rounded,
+                      onPressed: unlocking ? null : onFreeUnlock,
+                    ),
+                  );
+                }
+                final d = u.freeUnlockAt!.toLocal();
+                const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text('Your next free unlock: ${d.day} ${m[d.month - 1]}',
+                      textAlign: TextAlign.center, style: AppText.caption),
+                );
+              }),
+              const SizedBox(height: 8),
+              Text(
+                  (context.watch<SessionStore>().user?.freeUnlockDays ?? 0) > 0
+                      ? 'Free members get one Premium signal free every ${context.watch<SessionStore>().user!.freeUnlockDays} days.'
+                      : '',
+                  textAlign: TextAlign.center,
+                  style: AppText.caption),
             ],
           ),
         ),
