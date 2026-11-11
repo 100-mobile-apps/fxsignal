@@ -1,6 +1,6 @@
 const fs = require('fs');
 const { getHistoricalRates } = require('dukascopy-node');
-const pairs = { eurusd:'EUR/USD', gbpusd:'GBP/USD', usdjpy:'USD/JPY', audusd:'AUD/USD', usdcad:'USD/CAD', usdchf:'USD/CHF', nzdusd:'NZD/USD', xauusd:'XAU/USD' };
+const pairs = JSON.parse(process.env.PAIRS || '{"btcusd":"BTC/USD","ethusd":"ETH/USD","usatechidxusd":"US100","usa30idxusd":"US30"}');
 (async () => {
   fs.mkdirSync('out', { recursive: true });
   for (const [inst, sym] of Object.entries(pairs)) {
@@ -17,7 +17,7 @@ const pairs = { eurusd:'EUR/USD', gbpusd:'GBP/USD', usdjpy:'USD/JPY', audusd:'AU
     const seen = new Set(); const lines = ['symbol,time,open,high,low,close'];
     rows.sort((a, b) => a.timestamp - b.timestamp);
     for (const r of rows) {
-      if (seen.has(r.timestamp) || r.timestamp % 3600000) continue; seen.add(r.timestamp);
+      if (seen.has(r.timestamp) || r.timestamp % 3600000 && false) continue; seen.add(r.timestamp);
       const lo = Math.min(r.low, r.open, r.close), hi = Math.max(r.high, r.open, r.close);
       lines.push([sym, new Date(r.timestamp).toISOString().slice(0, 19) + 'Z', r.open, hi, lo, r.close].join(','));
     }
