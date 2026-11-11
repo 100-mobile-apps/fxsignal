@@ -61,7 +61,7 @@ function bt_load_csv(string $path): array
                 if (preg_match('//u', $field) !== 1) throw new InvalidArgumentException("Invalid UTF-8 CSV row at line $line");
             }
             [$symbol, $time, $o, $h, $l, $c] = $row;
-            if (!preg_match('/^[A-Z]{3}\/[A-Z]{3}$/D', $symbol) ||
+            if (!preg_match("/^([A-Z]{3}\/[A-Z]{3}|US100|US30)$/D", $symbol) ||
                 !preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:00:00(?:Z|\+00:00)$/D', $time)) {
                 throw new InvalidArgumentException("Invalid symbol or UTC hourly bar-open timestamp at line $line");
             }
@@ -94,6 +94,8 @@ function bt_load_csv(string $path): array
 
 function bt_pip_size(string $symbol): float
 {
+    if (in_array($symbol, ['BTC/USD', 'US100', 'US30'], true)) return 1.0;
+    if ($symbol === 'ETH/USD') return 0.1;
     return str_starts_with($symbol, 'XAU/') ? 0.1 : (str_contains($symbol, 'JPY') ? 0.01 : 0.0001);
 }
 

@@ -33,6 +33,7 @@ final class Signals
             $out['candles'] = json_decode($s['candles'] ?: '[]', true);
         }
         $out['locked'] = $locked;
+        $out['premium'] = Billing::signalIsPremium($s);
         if ($locked) {
             // Live levels are premium. Anything the entry could be worked out from is removed too.
             foreach (['entry', 'stop_loss', 'tp1', 'tp2', 'live_pips'] as $k) $out[$k] = null;
@@ -57,7 +58,7 @@ final class Signals
         $user = Auth::user();
         $status = ($_GET['status'] ?? 'running') === 'closed' ? 'closed' : 'running';
         if ($status === 'running') self::requireCurrentApp();
-        $locked = !Billing::isPremium($user);
+
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $per = 20;
         $params = [$status];
@@ -78,7 +79,7 @@ final class Signals
         $rows = Db::all("SELECT * FROM signals WHERE $where ORDER BY $order LIMIT " . ($per + 1) . " OFFSET $offset", $params);
         $hasMore = count($rows) > $per;
         Http::send([
-            'items' => array_map(fn($r) => self::format($r, false, $locked), array_slice($rows, 0, $per)),
+            'items' => array_map(fn($r) => self::format($r, false, Billing::lockedFor($user, $r)), array_slice($rows, 0, $per)),
             'page' => $page,
             'has_more' => $hasMore,
         ]);
@@ -90,6 +91,6 @@ final class Signals
         $row = Db::one('SELECT * FROM signals WHERE id = ?', [(int) $params['id']]);
         if (!$row) throw new ApiError('Signal not found', 404);
         if ($row['status'] === 'running') self::requireCurrentApp();
-        Http::send(['signal' => self::format($row, true, !Billing::isPremium($user))]);
+        Http::send(['signal' => self::format($row, true, Billing::lockedFor($user, $row))]);
     }
 }

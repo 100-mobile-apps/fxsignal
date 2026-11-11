@@ -138,7 +138,46 @@ final class Engine
     public static function analyze(array $candles, int $threshold = 60, ?string $pair = null): ?array
     {
         if ($pair === null) return self::trendConfluence($candles, $threshold);
+        if (in_array($pair, ['BTC/USD', 'ETH/USD'], true)) return self::cryptoBreakout($candles);
         return str_starts_with($pair, 'XAU') ? self::goldPullback($candles, $threshold) : self::rangeReversal($candles);
+    }
+
+    /**
+     * Crypto: 55-candle (about 9 days on 4h) breakout in the direction of the trend
+     * (EMA 50 above/below EMA 200). SL 2 ATR, TP1 2 ATR, TP2 4 ATR.
+     */
+    public static function cryptoBreakout(array $candles): ?array
+    {
+        $n = count($candles);
+        if ($n < 200 || !TradingPolicy::validCandles($candles)) return null;
+        $c = array_map(fn($x) => (float) $x['c'], $candles);
+        $L = $n - 1;
+        $price = $c[$L];
+        $at = self::atr($candles, 14)[$L] ?? 0.0;
+        $e50 = self::ema($c, 50)[$L];
+        $e200 = self::ema($c, 200)[$L];
+        $rsi = self::rsi($c, 14)[$L] ?? 50.0;
+        $prior = array_slice($candles, $L - 55, 55);
+        $hh = max(array_map(fn($x) => (float) $x['h'], $prior));
+        $ll = min(array_map(fn($x) => (float) $x['l'], $prior));
+        $out = ['direction' => 'WAIT', 'confidence' => 0, 'entry' => $price, 'sl' => null, 'tp1' => null, 'tp2' => null,
+                'rsi' => $rsi, 'atr' => $at, 'reasons' => []];
+        if ($at <= 0 || $e50 === null || $e200 === null) return $out;
+        if ($price > $hh && $price > $e50 && $e50 > $e200) $dir = 1;
+        elseif ($price < $ll && $price < $e50 && $e50 < $e200) $dir = -1;
+        else return $out;
+        $beyond = min(1.0, abs($price - ($dir === 1 ? $hh : $ll)) / $at);
+        $out['direction'] = $dir === 1 ? 'BUY' : 'SELL';
+        $out['confidence'] = (int) round(min(95, 74 + 8 * $beyond + 6 * min(1.0, abs($e50 - $e200) / (3 * $at))));
+        $out['sl'] = $price - $dir * 2.0 * $at;
+        $out['tp1'] = $price + $dir * 2.0 * $at;
+        $out['tp2'] = $price + $dir * 4.0 * $at;
+        $out['reasons'] = [
+            sprintf('Price broke the %s of the last 55 candles (about 9 days)', $dir === 1 ? 'high' : 'low'),
+            sprintf('Trend %s: EMA 50 is %s EMA 200', $dir === 1 ? 'up' : 'down', $dir === 1 ? 'above' : 'below'),
+            'Breakouts in the trend direction tend to run in crypto',
+        ];
+        return $out;
     }
 
     public static function goldPullback(array $candles, int $threshold = 60): ?array
@@ -179,8 +218,16 @@ final class Engine
         $stretch = min(1.0, (abs($z) - 2) / 1.0);
         $rsiX = min(1.0, (($dir === 1 ? 35 - $rsi : $rsi - 65)) / 15);
         $calm = min(1.0, (20 - $adx) / 10);
+        $bar = $candles[$L];
+        $reversal = ($bar['c'] - $bar['o']) * $dir > 0;
+        $hour = (int) gmdate('G', (int) $bar['t']);
+        // Backtest 2022-2026: setups formed in the London morning (candles opening 04:00-11:59 UTC)
+        // reached TP1 less often and lost money; the rest made money. Strength reflects that:
+        // London-morning setups score 62-70, all others 72-95. A closing reversal candle adds strength.
+        $london = $hour >= 4 && $hour < 12;
+        $raw = 3 * $stretch + 3 * $rsiX + 2 * $calm + ($reversal ? 4 : 0); // 0..12
         $out['direction'] = $dir === 1 ? 'BUY' : 'SELL';
-        $out['confidence'] = (int) round(min(95, 68 + 10 * $stretch + 9 * $rsiX + 8 * $calm));
+        $out['confidence'] = (int) round($london ? 62 + 8 * $raw / 12 : 72 + 23 * $raw / 12);
         $out['sl'] = $price - $dir * 2.0 * $at;
         $out['tp1'] = $price + $dir * 1.0 * $at;
         $out['tp2'] = $price + $dir * 2.0 * $at;
@@ -190,6 +237,8 @@ final class Engine
             sprintf('ADX %.0f: quiet, ranging market that favours a move back to the average', $adx),
             'Targets sit between price and the 20-period average',
         ];
+        if ($reversal) $out['reasons'][] = 'The candle closed back in the signal direction (reversal confirmed)';
+        if ($london) $out['reasons'][] = 'Formed in the London morning session, which has been less reliable for this setup';
         return $out;
     }
 

@@ -156,6 +156,26 @@ check('other users stay unlocked before launch', $c === 200 && $r['items'][0]['e
 check('old apps unaffected before launch', $c === 200);
 $GLOBALS['__CONFIG']['premium_enforced'] = true;
 
+echo "== Market tiers ==\n";
+$GLOBALS['__CONFIG']['premium_test_emails'] = [];
+$mk = function (string $pair, int $conf) {
+    return Db::insert("INSERT INTO signals (pair, timeframe, direction, entry, stop_loss, tp1, tp2, confidence, reasons, candles, candle_t, status, current_price, live_pips, opened_at, expires_at, updated_at)
+        VALUES (?, '4h', 'BUY', 1.5, 1.4, 1.6, 1.7, ?, '[]', '[]', 0, 'running', 1.5, 0, datetime('now'), datetime('now','+1 day'), datetime('now'))", [$pair, $conf]);
+};
+$weak = $mk('GBP/USD', 68); $gold = $mk('XAU/USD', 66); $edge = $mk('USD/JPY', 70); $strong = $mk('AUD/USD', 71);
+$see = function (int $id, string $tok) { [$c, $r] = call(fn() => Signals::show(['id' => (string) $id]), null, $tok); return $r['signal']; };
+check('free user sees forex signal at 68% in full', $see($weak, $freeTok)['entry'] === 1.5 && !$see($weak, $freeTok)['locked']);
+check('70% exactly is still free', $see($edge, $freeTok)['entry'] === 1.5);
+check('71% forex signal is locked', $see($strong, $freeTok)['locked'] === true && $see($strong, $freeTok)['entry'] === null);
+check('gold is premium even at 66%', $see($gold, $freeTok)['locked'] === true);
+check('premium user sees gold', $see($gold, $paidTok)['entry'] === 1.5);
+check('signal flagged premium/free for the app', $see($gold, $freeTok)['premium'] === true && $see($weak, $freeTok)['premium'] === false);
+$GLOBALS['__CONFIG']['free_max_strength'] = 75;
+check('threshold is a setting', $see($strong, $freeTok)['locked'] === false);
+$GLOBALS['__CONFIG']['premium_markets'] = ['XAU/USD', 'AUD/USD'];
+check('premium market list is a setting', $see($strong, $freeTok)['locked'] === true);
+unset($GLOBALS['__CONFIG']['free_max_strength'], $GLOBALS['__CONFIG']['premium_markets']);
+
 echo "\nRESULT: $pass passed, $fail failed\n";
 @unlink(__DIR__ . '/billing.db');
 @unlink(__DIR__ . '/billing_config.php');

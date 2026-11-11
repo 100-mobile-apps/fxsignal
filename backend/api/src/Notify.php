@@ -38,22 +38,21 @@ final class Notify
         $emoji = $s['direction'] === 'BUY' ? '🟢' : '🔴';
         $data = ['signal_id' => $s['id'], 'type' => 'signal'];
 
-        if (!Billing::enforced()) {
-            // Before launch: everyone keeps the full alert, exactly as before the update.
-            Fcm::sendToTopic('signals_' . topic_key($pair),
-                "$emoji {$s['direction']} $pair @ " . $f($s['entry']),
-                'SL ' . $f($s['stop_loss']) . ' · TP1 ' . $f($s['tp1']) . ' · TP2 ' . $f($s['tp2']) . " · {$s['confidence']}% strength",
-                $data);
-        } else
-        // Topic = every install that follows this pair, including free users and old app versions: teaser only.
-        Fcm::sendToTopic('signals_' . topic_key($pair),
-            "🔒 New {$s['direction']} signal on $pair",
-            "{$s['confidence']}% strength. Subscribe to see the entry, stop loss and take profit.",
-            $data + ['locked' => 1]);
-
-        // Verified premium devices get the full levels directly.
         $title = "$emoji {$s['direction']} $pair @ " . $f($s['entry']);
         $body = 'SL ' . $f($s['stop_loss']) . ' · TP1 ' . $f($s['tp1']) . ' · TP2 ' . $f($s['tp2']) . " · {$s['confidence']}% strength";
+        $premiumSignal = Billing::signalIsPremium($s);
+
+        if (!Billing::enforced() || !$premiumSignal) {
+            // Free signal (or before launch): everyone following the pair gets the full alert.
+            Fcm::sendToTopic('signals_' . topic_key($pair), $title, $body, $data);
+        } else {
+            // Premium signal: topic (free users + old app versions) gets a teaser only...
+            Fcm::sendToTopic('signals_' . topic_key($pair),
+                "🔒 New {$s['direction']} signal on $pair",
+                "{$s['confidence']}% strength. Subscribe to see the entry, stop loss and take profit.",
+                $data + ['locked' => 1]);
+        }
+        // ...and verified Premium devices get the full levels directly (they skip the topic).
         foreach (Billing::premiumDeviceTokens($pair) as $token) {
             if (Fcm::sendToToken($token, $title, $body, $data) === Fcm::UNREGISTERED) Billing::dropDevice($token);
         }
@@ -61,7 +60,7 @@ final class Notify
         $n = 0;
         foreach (self::recipients('email_signals', $pair) as $u) {
             $unsub = self::unsubscribeUrl((int) $u['id'], 'email_signals');
-            [$subj, $html, $text] = Billing::isPremium($u)
+            [$subj, $html, $text] = !Billing::lockedFor($u, $s + ['status' => 'running'])
                 ? EmailTemplates::newSignal($s, $u['name'], $unsub)
                 : EmailTemplates::lockedSignal($s, $u['name'], $unsub);
             Mailer::queue((int) $u['id'], $u['email'], $subj, $html, $text, $unsub);

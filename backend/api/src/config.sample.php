@@ -19,8 +19,11 @@ return [
     'requests_per_minute' => 8,
 
     // Instruments and timeframe the engine watches.
-    // Eight pairs every 20 minutes request roughly 576 series/day before retries or other usage.
-    'pairs' => ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF', 'NZD/USD', 'XAU/USD'],
+    // Ten pairs every 20 minutes request roughly 720 series/day (Twelve Data free plan: 800/day).
+    'pairs' => ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF', 'NZD/USD', 'XAU/USD', 'BTC/USD', 'ETH/USD'],
+    // Premium-only markets, and the strength above which other markets need Premium.
+    'premium_markets' => ['XAU/USD', 'BTC/USD', 'ETH/USD'],
+    'free_max_strength' => 70,
     // Strategy v2 is built and tested for 4-hour candles.
     'timeframe' => '4h',
 

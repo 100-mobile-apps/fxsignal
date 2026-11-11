@@ -37,6 +37,13 @@ final class Market
             'last_update' => $last ? json_decode($last['v'], true) : null,
             'push_enabled' => Fcm::enabled(),
             // Switch developer links on/off without an app update
+            // What is free vs Premium, and how prices are presented (editable on /admin)
+            'premium' => [
+                'enforced' => Billing::enforced(),
+                'markets' => Billing::premiumMarkets(),
+                'free_max_strength' => Billing::freeMaxStrength(),
+                'price_display' => config('price_display', (object) []),
+            ],
             'promo' => config('promo', ['coffee' => true, 'whatsapp' => true, 'hire' => true]),
         ]);
     }

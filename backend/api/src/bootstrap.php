@@ -16,8 +16,25 @@ if (!getenv('FX_CONFIG') && is_file(__DIR__ . '/config.premium.php')) {
     $GLOBALS['__CONFIG'] = array_replace($GLOBALS['__CONFIG'], (array) require __DIR__ . '/config.premium.php');
 }
 
+/** Settings the admin page may change; stored in the `settings` table and override the config files. */
+const ADMIN_SETTINGS = [
+    'premium_enforced', 'premium_test_emails', 'premium_emails', 'premium_markets', 'free_max_strength',
+    'pairs', 'min_confidence', 'price_display', 'email_campaigns',
+];
+
 function config(string $key, $default = null)
 {
+    static $loaded = false;
+    if (!$loaded && in_array($key, ADMIN_SETTINGS, true)) {
+        $loaded = true;
+        try {
+            foreach (Db::all('SELECT k, v FROM settings') as $row) {
+                if (in_array($row['k'], ADMIN_SETTINGS, true)) $GLOBALS['__CONFIG'][$row['k']] = json_decode($row['v'], true);
+            }
+        } catch (Throwable $e) {
+            // settings table not created yet: config files only
+        }
+    }
     return $GLOBALS['__CONFIG'][$key] ?? $default;
 }
 
@@ -34,6 +51,9 @@ function iso(?string $dt): ?string
 
 function pip_size(string $pair): float
 {
+    // Crypto and indices: one "pip" = one point of price ($1 on BTC, 0.1 on ETH, 1 point on US100/US30).
+    if (in_array($pair, ['BTC/USD', 'US100', 'US30'], true)) return 1.0;
+    if ($pair === 'ETH/USD') return 0.1;
     if (strpos($pair, 'XAU') === 0) return 0.1;
     if (strpos($pair, 'JPY') !== false) return 0.01;
     return 0.0001;
@@ -41,6 +61,7 @@ function pip_size(string $pair): float
 
 function price_decimals(string $pair): int
 {
+    if (in_array($pair, ['BTC/USD', 'ETH/USD', 'US100', 'US30'], true)) return 2;
     if (strpos($pair, 'XAU') === 0) return 2;
     if (strpos($pair, 'JPY') !== false) return 3;
     return 5;

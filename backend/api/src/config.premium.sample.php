@@ -21,4 +21,7 @@ return [
     // Before launch: the paywall is switched on ONLY for these accounts (testing).
     'premium_test_emails' => [],
     'min_app_build' => 5,
+    'pairs' => ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF', 'NZD/USD', 'XAU/USD', 'BTC/USD', 'ETH/USD'],
+    'premium_markets' => ['XAU/USD', 'BTC/USD', 'ETH/USD'],
+    'free_max_strength' => 70,
 ];

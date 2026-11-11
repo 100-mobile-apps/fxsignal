@@ -49,6 +49,31 @@ final class Billing
         return $tests && in_array(strtolower((string) ($user['email'] ?? '')), $tests, true);
     }
 
+    /** Premium-only markets (e.g. gold, crypto) — locked whatever the signal strength. */
+    public static function premiumMarkets(): array
+    {
+        return (array) config('premium_markets', ['XAU/USD', 'BTC/USD', 'ETH/USD']);
+    }
+
+    /** Signals at or below this strength are free on the other markets. */
+    public static function freeMaxStrength(): int
+    {
+        return (int) config('free_max_strength', 70);
+    }
+
+    /** Does this signal need Premium? (ignores who is asking) */
+    public static function signalIsPremium(array $signal): bool
+    {
+        return in_array($signal['pair'], self::premiumMarkets(), true)
+            || (int) $signal['confidence'] > self::freeMaxStrength();
+    }
+
+    /** Should this live signal's levels be hidden from this user? */
+    public static function lockedFor(array $user, array $signal): bool
+    {
+        return $signal['status'] === 'running' && self::signalIsPremium($signal) && !self::isPremium($user);
+    }
+
     public static function isPremium(array $user, ?int $now = null): bool
     {
         if (!self::enforcedFor($user)) return true;
