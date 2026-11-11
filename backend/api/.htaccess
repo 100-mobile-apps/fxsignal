@@ -9,6 +9,9 @@ RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 RewriteRule ^(src|cron)(/|$) - [F,L]
 RewriteRule \.(sql|md|json|lock)$ - [F,L]
 
+# /admin is a separate page (add the trailing slash instead of routing to the API)
+RewriteRule ^admin$ /admin/ [R=301,L]
+
 # Everything else goes to the router
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^ index.php [QSA,L]
