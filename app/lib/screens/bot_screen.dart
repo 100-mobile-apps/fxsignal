@@ -305,7 +305,7 @@ class _CopyCard extends StatelessWidget {
     final lots = BotStore.lots(
         pair: s.pair, balance: balance, riskPct: risk, entry: s.entry, stopLoss: s.stopLoss,
         pipValuePerLot: pipValuePerLot(s.pair, s.currentPrice ?? s.entry));
-    final p = (double v) => Fmt.price(s.pair, v);
+    String p(double v) => Fmt.price(s.pair, v);
     final ticket = '${s.direction} ${s.pair} ${lots.toStringAsFixed(2)} lots\n'
         'Entry ${p(s.entry)}\nSL ${p(s.stopLoss)}\nTP1 ${p(s.tp1)}\nTP2 ${p(s.tp2)}';
     final color = s.isBuy ? AppColors.buy : AppColors.sell;
