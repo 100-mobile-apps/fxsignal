@@ -245,17 +245,18 @@ final class Billing
         $hash = hash('sha256', $token);
         $plan = $item['offerDetails']['basePlanId'] ?? (str_contains($productId, 'year') ? 'yearly' : 'monthly');
         $auto = !empty($item['autoRenewingPlan']['autoRenewEnabled']) ? 1 : 0;
+        $phase = isset($item['offerPhase']['freeTrial']) ? 'trial' : (isset($item['offerPhase']['introductoryPrice']) ? 'intro' : 'base');
         $sealed = self::seal($token);
 
         if (Db::one('SELECT id FROM subscriptions WHERE token_hash = ?', [$hash])) {
-            Db::exec('UPDATE subscriptions SET product_id = ?, plan = ?, state = ?, expires_at = ?, auto_renewing = ?, order_id = ?,
+            Db::exec('UPDATE subscriptions SET product_id = ?, plan = ?, phase = ?, state = ?, expires_at = ?, auto_renewing = ?, order_id = ?,
                       test_purchase = ?, last_checked_at = ?, updated_at = ? WHERE token_hash = ?',
-                [$productId, $plan, $state, $expiresAt, $auto, $data['latestOrderId'] ?? null,
+                [$productId, $plan, $phase, $state, $expiresAt, $auto, $data['latestOrderId'] ?? null,
                  isset($data['testPurchase']) ? 1 : 0, now($now), now($now), $hash]);
         } else {
-            Db::exec('INSERT INTO subscriptions (user_id, product_id, plan, purchase_token, token_hash, state, expires_at, auto_renewing,
-                      order_id, test_purchase, last_checked_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [$userId, $productId, $plan, $sealed, $hash, $state, $expiresAt, $auto, $data['latestOrderId'] ?? null,
+            Db::exec('INSERT INTO subscriptions (user_id, product_id, plan, phase, purchase_token, token_hash, state, expires_at, auto_renewing,
+                      order_id, test_purchase, last_checked_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$userId, $productId, $plan, $phase, $sealed, $hash, $state, $expiresAt, $auto, $data['latestOrderId'] ?? null,
                  isset($data['testPurchase']) ? 1 : 0, now($now), now($now), now($now)]);
         }
         // An upgrade/downgrade or resubscribe replaces the previous token.

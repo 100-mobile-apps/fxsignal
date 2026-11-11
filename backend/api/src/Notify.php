@@ -125,7 +125,8 @@ final class Notify
         $col = (string) ($_GET['k'] ?? '');
         $sig = (string) ($_GET['s'] ?? '');
         $labels = ['email_signals' => 'new signal emails', 'email_results' => 'trade result emails',
-            'email_daily' => 'daily report emails', 'email_weekly' => 'weekly report emails', 'email_monthly' => 'monthly report emails'];
+            'email_daily' => 'daily report emails', 'email_weekly' => 'weekly report emails', 'email_monthly' => 'monthly report emails',
+            'email_marketing' => 'tips and offers emails'];
         $ok = isset($labels[$col]) && self::checkUnsubscribe($uid, $col, $sig);
         if ($ok) Db::exec("UPDATE users SET $col = 0 WHERE id = ?", [$uid]);
         http_response_code($ok ? 200 : 400);

@@ -552,6 +552,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                     (2, 'Daily report', 'Every trading day after the New York close', email.daily, (bool v) => email.copyWith(daily: v)),
                     (3, 'Weekly report', 'Saturday morning: the full week', email.weekly, (bool v) => email.copyWith(weekly: v)),
                     (4, 'Monthly report', 'On the 1st: last month\'s performance', email.monthly, (bool v) => email.copyWith(monthly: v)),
+                    (5, 'Tips and offers', 'Getting started tips, new features and Premium offers', email.marketing, (bool v) => email.copyWith(marketing: v)),
                   ]) ...[
                     if (i > 0) const Divider(height: 1),
                     SwitchListTile(

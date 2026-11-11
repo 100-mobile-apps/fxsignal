@@ -58,6 +58,14 @@ final class Cron
         } catch (Throwable $e) {
             $log[] = 'billing: ' . $e->getMessage();
         }
+        // Automated emails, once an hour
+        if ((int) gmdate('i', $now) < 20) {
+            try {
+                $log = array_merge($log, Campaigns::run($now));
+            } catch (Throwable $e) {
+                $log[] = 'campaigns: ' . $e->getMessage();
+            }
+        }
         [$sent, $failed] = Mailer::processQueue();
         if ($sent || $failed) $log[] = "emails: $sent sent" . ($failed ? ", $failed failed (will retry)" : '');
 

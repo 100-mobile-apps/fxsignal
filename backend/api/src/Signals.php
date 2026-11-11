@@ -91,6 +91,8 @@ final class Signals
         $row = Db::one('SELECT * FROM signals WHERE id = ?', [(int) $params['id']]);
         if (!$row) throw new ApiError('Signal not found', 404);
         if ($row['status'] === 'running') self::requireCurrentApp();
-        Http::send(['signal' => self::format($row, true, Billing::lockedFor($user, $row))]);
+        $locked = Billing::lockedFor($user, $row);
+        if ($locked) Campaigns::track((int) $user['id'], 'locked_view');
+        Http::send(['signal' => self::format($row, true, $locked)]);
     }
 }

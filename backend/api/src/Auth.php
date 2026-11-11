@@ -13,6 +13,11 @@ final class Auth
         if (!$user || (int) $user['token_version'] !== (int) ($payload['v'] ?? -1)) {
             throw new ApiError('Your session has expired. Please log in again.', 401);
         }
+        // Activity for win-back emails (written at most once an hour)
+        $seen = $user['last_seen_at'] ?? null;
+        if (array_key_exists('last_seen_at', $user) && (!$seen || strtotime($seen . ' UTC') < time() - 3600)) {
+            try { Db::exec('UPDATE users SET last_seen_at = ? WHERE id = ?', [now(), $user['id']]); } catch (Throwable $e) {}
+        }
         return $user;
     }
 
@@ -40,6 +45,7 @@ final class Auth
                     'daily' => (bool) $u['email_daily'],
                     'weekly' => (bool) $u['email_weekly'],
                     'monthly' => (bool) $u['email_monthly'],
+                    'marketing' => (bool) ($u['email_marketing'] ?? 1),
                 ],
             ],
             'watchlist' => $u['watchlist'] ? json_decode($u['watchlist'], true) : config('pairs'),

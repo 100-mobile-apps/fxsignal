@@ -83,6 +83,7 @@ require_once __DIR__ . '/TwelveData.php';
 require_once __DIR__ . '/GoogleAuth.php';
 require_once __DIR__ . '/Fcm.php';
 require_once __DIR__ . '/Billing.php';
+require_once __DIR__ . '/Campaigns.php';
 require_once __DIR__ . '/Mailer.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/Account.php';

@@ -34,9 +34,3 @@ CREATE TABLE IF NOT EXISTS devices (
   INDEX (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Phase 2: settings edited on /admin (override the config files)
-CREATE TABLE IF NOT EXISTS settings (
-  k VARCHAR(64) NOT NULL PRIMARY KEY,
-  v TEXT NOT NULL,
-  updated_at DATETIME NOT NULL
-);

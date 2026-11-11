@@ -58,7 +58,7 @@ final class Account
         $bool = fn($arr, $key, $current) => array_key_exists($key, $arr) ? (!empty($arr[$key]) ? 1 : 0) : (int) $current;
         $email = is_array($b['email'] ?? null) ? $b['email'] : [];
         Db::exec('UPDATE users SET notify_signals = ?, notify_results = ?, notify_reports = ?, notify_pairs = ?,
-                  email_signals = ?, email_results = ?, email_daily = ?, email_weekly = ?, email_monthly = ? WHERE id = ?', [
+                  email_signals = ?, email_results = ?, email_daily = ?, email_weekly = ?, email_monthly = ?, email_marketing = ? WHERE id = ?', [
             $bool($b, 'signals', $u['notify_signals']),
             $bool($b, 'results', $u['notify_results']),
             $bool($b, 'reports', $u['notify_reports']),
@@ -68,6 +68,7 @@ final class Account
             $bool($email, 'daily', $u['email_daily']),
             $bool($email, 'weekly', $u['email_weekly']),
             $bool($email, 'monthly', $u['email_monthly']),
+            $bool($email, 'marketing', $u['email_marketing'] ?? 1),
             $u['id'],
         ]);
         self::me();

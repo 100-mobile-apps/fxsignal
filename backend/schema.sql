@@ -16,11 +16,13 @@ CREATE TABLE IF NOT EXISTS users (
   email_daily TINYINT(1) NOT NULL DEFAULT 0,
   email_weekly TINYINT(1) NOT NULL DEFAULT 1,
   email_monthly TINYINT(1) NOT NULL DEFAULT 1,
+  email_marketing TINYINT(1) NOT NULL DEFAULT 1,
   watchlist TEXT NULL,
   premium_until DATETIME NULL,
   premium_plan VARCHAR(40) NULL,
   created_at DATETIME NOT NULL,
-  last_login_at DATETIME NULL
+  last_login_at DATETIME NULL,
+  last_seen_at DATETIME NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- One-time 6-digit codes for email verification and password reset
@@ -110,6 +112,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   user_id INT UNSIGNED NOT NULL,
   product_id VARCHAR(64) NOT NULL,
   plan VARCHAR(40) NULL,
+  phase VARCHAR(10) NULL,
   purchase_token TEXT NOT NULL,
   token_hash CHAR(64) NOT NULL UNIQUE,
   state VARCHAR(40) NOT NULL,
@@ -133,8 +136,30 @@ CREATE TABLE IF NOT EXISTS devices (
   INDEX (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Settings edited on /admin (override the config files)
 CREATE TABLE IF NOT EXISTS settings (
   k VARCHAR(64) NOT NULL PRIMARY KEY,
   v TEXT NOT NULL,
   updated_at DATETIME NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Automated emails already sent (dedupe and weekly cap)
+CREATE TABLE IF NOT EXISTS email_log (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  kind VARCHAR(20) NOT NULL,
+  ref VARCHAR(40) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL,
+  INDEX (user_id, kind),
+  INDEX (user_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- User actions used to target emails (e.g. tapping a locked signal)
+CREATE TABLE IF NOT EXISTS user_events (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  kind VARCHAR(20) NOT NULL,
+  created_at DATETIME NOT NULL,
+  INDEX (kind, created_at),
+  INDEX (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -143,7 +143,7 @@ HTML;
             . '<div style="margin-top:6px;font-size:13px;color:#8A93A8">Strength ' . (int) $s['confidence'] . '% · Published ' . gmdate('M j, H:i', strtotime($s['opened_at'] . ' UTC')) . ' UTC</div>'
             . '<div style="margin-top:18px;padding:16px;border-radius:12px;background:#151D2E;border:1px solid #F5B942;color:#F4F6FB;font-size:14px;line-height:1.55">'
             . '🔒 The entry, stop loss, TP1 and TP2 for this signal are for Premium members.<br>'
-            . '<span style="color:#AEB6C8">Start your 7-day free trial in the app, then $5/month or $36/year ($3/month).</span></div>'
+            . '<span style="color:#AEB6C8">Start your 7-day free trial in the app, then ' . self::e(self::priceLine()) . '.</span></div>'
             . self::button('Open the app to unlock');
         $text = "New signal: {$s['direction']} $pair ({$s['confidence']}% strength)\n\n"
             . "The entry, stop loss and take profit are for Premium members. Open Forex Signals Live to start your 7-day free trial.\n\nUnsubscribe: $unsub";
@@ -222,5 +222,77 @@ HTML;
         $html = self::layout("{$row['wins']} wins, {$row['losses']} losses, " . self::pips($pips) . ' pips', $inner, $unsub,
             "You're getting this because " . strtolower($title) . ' emails are on.');
         return [$subject, $html, $text];
+    }
+    /** "$1.50/month or $12/year" from the admin price labels (launch prices while the offer runs). */
+    public static function priceLine(): string
+    {
+        $p = (array) config('price_display', []);
+        $launch = !empty($p['launch_monthly']) && (empty($p['launch_ends']) || strtotime($p['launch_ends'] . ' 23:59:59 UTC') >= time());
+        $m = $launch ? $p['launch_monthly'] : (($p['monthly'] ?? '') ?: '$4.99');
+        $y = $launch ? ($p['launch_yearly'] ?? '') : ($p['yearly'] ?? '');
+        return $m . '/month' . ($y !== '' ? " or $y/year" : '');
+    }
+
+    private static function linkButton(string $text, string $url): string
+    {
+        return '<a href="' . self::e($url) . '" style="display:block;margin-top:22px;padding:13px 0;border-radius:12px;background:#F5B942;color:#1A1204;text-align:center;font-weight:700;font-size:15px;text-decoration:none">'
+            . self::e($text) . '</a>';
+    }
+
+    /**
+     * Automated emails (welcome series, upgrade offer, win-back, subscription notices).
+     * @return array{0:string,1:string,2:string} subject, html, text
+     */
+    public static function campaign(string $kind, string $name, ?string $unsub, ?array $sub = null): array
+    {
+        $first = trim(explode(' ', trim($name))[0] ?? '') ?: 'there';
+        $prices = self::priceLine();
+        $store = 'https://play.google.com/store/apps/details?id=' . rawurlencode((string) (config('play')['package_name'] ?? 'com.forexsignalslive.forex_signals'));
+        $manage = 'https://play.google.com/store/account/subscriptions';
+        $date = $sub && !empty($sub['expires_at']) ? gmdate('j M Y', strtotime($sub['expires_at'] . ' UTC')) : '';
+        $c = match ($kind) {
+            'welcome1' => ['How to read a signal', 'Welcome, ' . $first . ' 👋', [
+                'Every signal shows a direction (BUY or SELL), an entry price, a stop loss and two take-profit targets.',
+                'Strength tells you how many conditions lined up. Forex signals up to 70% are free; stronger setups, gold and crypto are Premium.',
+                'Tip: turn on alerts for the pairs you trade under Profile → Notifications.'], 'Open the app', $store],
+            'welcome2' => ['Our track record, in the open', 'Check the results page', [
+                'Every closed signal stays in the app with its result in pips, wins and losses alike, so you can judge the strategy yourself.',
+                'Use the risk calculator in Tools to size each trade so a stop loss never costs more than you planned.'], 'See the results', $store],
+            'welcome3' => ['Try Premium free for 7 days', 'Unlock every live signal', [
+                'Premium gives you the entry, stop loss and targets on all signals, including gold, Bitcoin and Ethereum, plus instant alerts and the trading bot.',
+                "Start with a 7-day free trial, then $prices. Cancel anytime in Google Play."], 'Start free trial', $store],
+            'upgrade' => ['The signals you opened this week', 'You checked a few Premium signals', [
+                'You tapped on locked signals this week. Premium shows you the full levels the moment a signal is published.',
+                "Try it free for 7 days, then $prices. Cancel anytime in Google Play."], 'Unlock live signals', $store],
+            'winback7' => ['New signals since your last visit', "We've missed you, $first", [
+                'New signals have been published since you last opened the app. Have a look at the latest setups and results.'], 'See new signals', $store],
+            'winback14' => ['Your markets moved this fortnight', 'Two weeks of signals waiting', [
+                'Catch up on the last two weeks of signals and results. Alerts can tell you the moment a new setup appears on your pairs.'], 'Open the app', $store],
+            'winback30' => ['Still trading?', "It's been a month, $first", [
+                "If you'd like to come back, the app has new markets (gold, Bitcoin, Ethereum) and a trading bot for Premium members.",
+                'Not interested any more? You can unsubscribe below and we won\'t email you about this again.'], 'Take a look', $store],
+            'trial_ending' => ['Your free trial ends soon', 'Your trial ends on ' . $date, [
+                (int) ($sub['auto_renewing'] ?? 0) === 1
+                    ? 'Your Premium subscription starts automatically when the trial ends, at the price shown in Google Play. Nothing to do if you want to keep it.'
+                    : 'Auto-renew is off, so Premium will stop when the trial ends. Turn it back on in Google Play to keep your live signals.',
+                'You can change or cancel anytime in Google Play → Subscriptions.'], 'Manage subscription', $manage],
+            'renewal' => ['Your yearly Premium renews soon', 'Renews on ' . $date, [
+                'Your yearly Premium subscription renews automatically on ' . $date . ' at the price shown in Google Play.',
+                'To change or cancel, go to Google Play → Subscriptions before that date.'], 'Manage subscription', $manage],
+            'payment_failed' => ['Action needed: payment problem', "We couldn't renew your Premium", [
+                "Google Play couldn't take the payment for your subscription. Please update your payment method to keep live signals unlocked.",
+                'Google keeps your subscription for a few days while you fix it.'], 'Fix payment in Google Play', $manage],
+            'expired' => ['Your Premium has ended', 'Premium ended on ' . $date, [
+                'Your live signal levels, gold and crypto signals and the trading bot are now locked. Free forex signals and results are still yours.',
+                "Come back anytime: $prices."], 'Resubscribe', $store],
+            default => throw new InvalidArgumentException($kind),
+        };
+        [$subject, $headline, $paras, $cta, $url] = $c;
+        $inner = '<div style="font-size:22px;font-weight:800;color:#F4F6FB">' . self::e($headline) . '</div>';
+        foreach ($paras as $p) $inner .= '<p style="margin:14px 0 0;font-size:15px;line-height:1.6;color:#C9D0DE">' . self::e($p) . '</p>';
+        $inner .= self::linkButton($cta, $url);
+        $text = "$headline\n\n" . implode("\n\n", $paras) . "\n\n$cta: $url" . ($unsub ? "\n\nUnsubscribe: $unsub" : '');
+        $reason = $unsub ? "You're getting this because tips and offers emails are on." : 'This is a service message about your subscription.';
+        return [$subject, self::layout($paras[0], $inner, $unsub, $reason), $text];
     }
 }

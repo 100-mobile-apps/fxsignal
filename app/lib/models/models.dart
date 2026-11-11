@@ -22,12 +22,16 @@ class Candle {
 
 class EmailPrefs {
   final bool signals, results, daily, weekly, monthly;
+
+  /// Tips, offers and "we miss you" emails.
+  final bool marketing;
   const EmailPrefs(
       {this.signals = true,
       this.results = true,
       this.daily = false,
       this.weekly = true,
-      this.monthly = true});
+      this.monthly = true,
+      this.marketing = true});
 
   factory EmailPrefs.fromJson(Map<String, dynamic> j) => EmailPrefs(
         signals: j['signals'] as bool? ?? true,
@@ -35,6 +39,7 @@ class EmailPrefs {
         daily: j['daily'] as bool? ?? false,
         weekly: j['weekly'] as bool? ?? true,
         monthly: j['monthly'] as bool? ?? true,
+        marketing: j['marketing'] as bool? ?? true,
       );
 
   Map<String, dynamic> toJson() => {
@@ -43,15 +48,18 @@ class EmailPrefs {
         'daily': daily,
         'weekly': weekly,
         'monthly': monthly,
+        'marketing': marketing,
       };
 
-  EmailPrefs copyWith({bool? signals, bool? results, bool? daily, bool? weekly, bool? monthly}) =>
+  EmailPrefs copyWith(
+          {bool? signals, bool? results, bool? daily, bool? weekly, bool? monthly, bool? marketing}) =>
       EmailPrefs(
         signals: signals ?? this.signals,
         results: results ?? this.results,
         daily: daily ?? this.daily,
         weekly: weekly ?? this.weekly,
         monthly: monthly ?? this.monthly,
+        marketing: marketing ?? this.marketing,
       );
 }
 
