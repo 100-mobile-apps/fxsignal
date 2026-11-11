@@ -157,7 +157,7 @@ class PairAvatar extends StatelessWidget {
 
   Widget _coin(String code) {
     final flag = _flags[code];
-    final isGold = code == 'XAU';
+    final isGold = code == 'XAU' || code == 'BTC' || code == 'ETH';
     return Container(
       width: size * 0.72,
       height: size * 0.72,
@@ -170,7 +170,7 @@ class PairAvatar extends StatelessWidget {
       alignment: Alignment.center,
       child: flag != null
           ? Text(flag, style: TextStyle(fontSize: size * 0.36, height: 1.1))
-          : Text(isGold ? 'Au' : code.substring(0, 1),
+          : Text(const {'XAU': 'Au', 'BTC': '₿', 'ETH': 'Ξ'}[code] ?? code.substring(0, 1),
               style: TextStyle(
                   fontSize: size * 0.26,
                   fontWeight: FontWeight.w800,

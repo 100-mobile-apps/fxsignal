@@ -24,6 +24,8 @@ class DemoApi extends Api {
     'USD/CHF': 0.88,
     'NZD/USD': 0.61,
     'XAU/USD': 2350.0,
+    'BTC/USD': 95000.0,
+    'ETH/USD': 3400.0,
   };
 
   Map<String, List<Candle>>? _market;
@@ -410,7 +412,7 @@ class DemoApi extends Api {
   Future<void> unregisterDevice(String pushToken) async {}
 
   Future<bool> _premium() async => (await _loadUser())?.premium ?? false;
-  TradeSignal _gate(TradeSignal s, bool premium) => s.isRunning && !premium ? s.lockedCopy() : s;
+  TradeSignal _gate(TradeSignal s, bool premium) => s.isRunning && !premium && s.premiumTier ? s.lockedCopy() : s;
 
   @override
   Future<List<PriceQuote>> prices() async {

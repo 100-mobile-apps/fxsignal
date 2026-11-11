@@ -113,7 +113,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 'Live entry, stop loss, TP1 and TP2',
                 'Instant push and email alerts with full levels',
                 'Why-this-signal reasons and chart levels',
-                'All 8 pairs, including gold (XAU/USD)',
+                'Gold, Bitcoin and Ethereum signals',
+                'Strongest forex setups (above 70% strength)',
+                'Trading bot: auto-pilot, copy-trade and Deriv',
               ])
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10, left: 4),

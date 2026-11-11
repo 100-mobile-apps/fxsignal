@@ -17,6 +17,8 @@ const _fallbackPrice = {
 /// USD value of one pip for one standard lot, for a USD account.
 double pipValuePerLot(String pair, double? price) {
   if (pair.startsWith('XAU')) return 10; // 100 oz × 0.10
+  if (pair.startsWith('BTC')) return 1; // 1 coin × \$1
+  if (pair.startsWith('ETH')) return 0.1; // 1 coin × \$0.10
   if (pair.endsWith('/USD')) return 10; // 100,000 × 0.0001
   final p = price ?? _fallbackPrice[pair] ?? 1;
   return 100000 * Fmt.pipSize(pair) / p; // USD/XXX pairs

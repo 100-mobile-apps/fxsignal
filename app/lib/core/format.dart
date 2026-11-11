@@ -1,15 +1,18 @@
 class Fmt {
   static int decimals(String pair) {
-    if (pair.startsWith('XAU')) return 2;
+    if (pair.startsWith('XAU') || isCrypto(pair)) return 2;
     if (pair.contains('JPY')) return 3;
     return 5;
   }
 
   static double pipSize(String pair) {
-    if (pair.startsWith('XAU')) return 0.1;
+    if (pair.startsWith('XAU') || pair.startsWith('ETH')) return 0.1;
+    if (pair.startsWith('BTC')) return 1.0;
     if (pair.contains('JPY')) return 0.01;
     return 0.0001;
   }
+
+  static bool isCrypto(String pair) => pair.startsWith('BTC') || pair.startsWith('ETH');
 
   static String price(String pair, double? v) =>
       v == null ? '—' : v.toStringAsFixed(decimals(pair));

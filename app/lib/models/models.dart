@@ -282,6 +282,10 @@ class TradeSignal {
         currentPrice: currentPrice, livePips: null, candles: candles, locked: true,
       );
 
+  /// Needs Premium: gold/crypto, or forex above the free strength limit.
+  bool get premiumTier =>
+      const ['XAU/USD', 'BTC/USD', 'ETH/USD'].contains(pair) || confidence > 70;
+
   String get direction => isBuy ? 'BUY' : 'SELL';
   String get timeframeLabel => switch (timeframe) {
         '15min' => 'M15',

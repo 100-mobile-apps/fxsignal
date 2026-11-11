@@ -55,7 +55,7 @@ class LegalScreen extends StatelessWidget {
           ],
         LegalDoc.methodology => const [
             ('Markets and timeframe',
-                'The engine scans 8 instruments (EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF, NZD/USD and XAU/USD) on the 4-hour chart, using only fully closed candles so signals never repaint.'),
+                'The engine scans 10 instruments (EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF, NZD/USD, XAU/USD, BTC/USD and ETH/USD) on the 4-hour chart, using only fully closed candles so signals never repaint. Forex signals at 70% strength or below are free; stronger forex signals, gold and crypto need Premium.'),
             ('Currency pairs: range reversal',
                 'In a calm, ranging market (ADX below 20), a candle that closes outside the 20-period Bollinger Band (2 standard deviations) with RSI at 35 or lower (buy) or 65 or higher (sell) signals a likely move back toward the average. Stop loss is 2 × ATR(14) from entry, TP1 is 1 × ATR and TP2 is 2 × ATR.'),
             ('Gold: trend pullback',
@@ -63,7 +63,7 @@ class LegalScreen extends StatelessWidget {
             ('How results are recorded',
                 'Every published signal is tracked automatically on the server. If the stop loss and a target are touched in the same candle, the stop loss is counted first. After TP1 the stop moves to entry; the trade then closes at TP2 (full win) or back at entry (TP1 win). Open signals close at market after 5 days. Signals are never edited or deleted after publishing.'),
             ('Pips',
-                'Results are shown in pips before spread and commission. 1 pip = 0.0001 (0.01 for JPY pairs, 0.10 for gold).'),
+                'Results are shown in pips before spread and commission. 1 pip = 0.0001 (0.01 for JPY pairs, 0.10 for gold and Ethereum, 1.00 for Bitcoin).'),
           ],
       };
 

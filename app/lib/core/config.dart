@@ -32,5 +32,7 @@ class AppConfig {
     'USD/CHF',
     'NZD/USD',
     'XAU/USD',
+    'BTC/USD',
+    'ETH/USD',
   ];
 }
