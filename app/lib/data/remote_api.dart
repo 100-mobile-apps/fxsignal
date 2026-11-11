@@ -199,6 +199,10 @@ class RemoteApi extends Api {
     await _req('DELETE', '/me/device', body: {'token': pushToken});
   }
 
+  @override
+  Future<Map<String, dynamic>> botConfig() async =>
+      ((await _req('GET', '/health'))['bot'] as Map?)?.cast<String, dynamic>() ?? const {};
+
   Future<bool> pushEnabled() async =>
       (await _req('GET', '/health'))['push_enabled'] == true;
 

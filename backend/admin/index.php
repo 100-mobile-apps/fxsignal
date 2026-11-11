@@ -92,6 +92,9 @@ try {
             setting_save('premium_emails', lines((string) ($_POST['premium_emails'] ?? '')));
             setting_save('price_display', $prices);
             setting_save('email_campaigns', $campaigns);
+            $appId = preg_replace('/[^A-Za-z0-9_-]/', '', (string) ($_POST['deriv_app_id'] ?? ''));
+            setting_save('bot', ['paper' => !empty($_POST['bot_paper']), 'copy' => !empty($_POST['bot_copy']),
+                'deriv' => !empty($_POST['bot_deriv']), 'deriv_app_id' => mb_substr($appId, 0, 40)]);
             $want = !empty($_POST['premium_enforced']);
             if ($want !== (bool) config('premium_enforced', false)) {
                 if ($want && ($_POST['confirm_launch'] ?? '') !== 'LAUNCH') throw new RuntimeException('Other settings saved. To switch Premium on for everyone, type LAUNCH in the confirmation box.');
@@ -129,6 +132,7 @@ $enforced = (bool) config('premium_enforced', false);
 $pairs = (array) config('pairs', []);
 $premiumMarkets = Billing::premiumMarkets();
 $prices = (array) config('price_display', []) + ['monthly' => '$4.99', 'yearly' => '$35.99', 'launch_monthly' => '$1.50', 'launch_yearly' => '$12', 'launch_label' => 'Launch offer', 'launch_ends' => ''];
+$bot = (array) config('bot', []) + ['paper' => true, 'copy' => true, 'deriv' => true, 'deriv_app_id' => ''];
 $campaigns = (array) config('email_campaigns', []) + ['max_per_week' => 2, 'welcome' => true, 'upgrade' => true, 'winback' => true, 'lifecycle' => true];
 ?><!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -213,6 +217,14 @@ button{background:linear-gradient(135deg,#f9d77e,#e0a526);color:#1a1204;border:0
     <?php foreach (CAMPAIGNS as $k => $label): ?><label class="chip" style="margin:6px 0;width:max-content"><input type="checkbox" name="campaign_<?= h($k) ?>" value="1" <?= !empty($campaigns[$k]) ? 'checked' : '' ?>> <?= h($label) ?></label><?php endforeach ?>
     <label>Most marketing emails per user per week</label><input type="number" name="max_per_week" min="0" max="7" value="<?= (int) $campaigns['max_per_week'] ?>" style="max-width:120px">
     <p class="hint">Signal alerts and billing notices don't count towards this limit. Every marketing email has an unsubscribe link.</p>
+  </div>
+
+  <div class="card"><h2>Trading bot (Premium)</h2>
+    <label class="chip" style="margin:6px 0;width:max-content"><input type="checkbox" name="bot_paper" value="1" <?= !empty($bot['paper']) ? 'checked' : '' ?>> Auto-pilot (paper trading)</label>
+    <label class="chip" style="margin:6px 0;width:max-content"><input type="checkbox" name="bot_copy" value="1" <?= !empty($bot['copy']) ? 'checked' : '' ?>> Copy-trade assistant</label>
+    <label class="chip" style="margin:6px 0;width:max-content"><input type="checkbox" name="bot_deriv" value="1" <?= !empty($bot['deriv']) ? 'checked' : '' ?>> Auto-trading on Deriv</label>
+    <label>Deriv App ID (register a "PAT" app at developers.deriv.com)</label><input type="text" name="deriv_app_id" value="<?= h($bot['deriv_app_id']) ?>" style="max-width:240px">
+    <p class="hint">Deriv auto-trading stays hidden in the app until an App ID is set. Users' Deriv tokens never reach this server.</p>
   </div>
 
   <p><button type="submit">Save changes</button></p>

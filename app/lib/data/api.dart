@@ -41,6 +41,9 @@ abstract class Api {
   /// Which developer links to show (server-controlled). Keys: coffee, whatsapp, hire.
   Future<Map<String, bool>> promo();
 
+  /// Trading bot switches from the server (/health → bot).
+  Future<Map<String, dynamic>> botConfig();
+
   /// Sends a Google Play purchase to the server, which checks it with Google
   /// and returns the account with premium switched on.
   Future<AppUser> verifyPurchase(String productId, String purchaseToken);

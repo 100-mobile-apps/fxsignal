@@ -7,6 +7,7 @@ import '../core/format.dart';
 import '../core/theme.dart';
 import '../state/data_stores.dart';
 import '../widgets/common.dart';
+import 'bot_screen.dart';
 
 const _fallbackPrice = {
   'USD/JPY': 150.0,
@@ -48,6 +49,26 @@ class _ToolsScreenState extends State<ToolsScreen> {
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
             child: Text('Size every trade so one loss never hurts', style: AppText.caption),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: GlassCard(
+              gradient: AppColors.cardGradient,
+              borderColor: AppColors.gold.withValues(alpha: 0.6),
+              onTap: () => openBot(context),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: const Row(children: [
+                Icon(Icons.smart_toy_rounded, color: AppColors.gold),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Trading bot', style: AppText.title),
+                    Text('Auto-pilot, copy trade and Deriv auto-trading', style: AppText.caption),
+                  ]),
+                ),
+                Icon(Icons.chevron_right_rounded, color: AppColors.text2),
+              ]),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),

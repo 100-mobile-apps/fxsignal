@@ -12,9 +12,11 @@ import '../core/config.dart';
 import '../data/api.dart';
 import '../data/remote_api.dart';
 import '../models/models.dart';
+import '../state/bot_store.dart';
 
 const _uniqueTask = 'signal-poll-unique';
 const _taskName = 'pollSignals';
+const _alertsKey = 'bg_alerts_enabled';
 String _eventsKey(int userId) => 'notified_signal_events_$userId';
 String _stage(TradeSignal signal) => signal.isRunning
     ? (signal.tp1Hit ? 'tp1' : 'open') : 'closed';
@@ -56,6 +58,12 @@ void backgroundSignalDispatcher() {
         for (final signal in closed.items) signal.id: signal,
       };
       final signals = signalsById.values.toList();
+      // Trading bot (Deriv auto-trading, if the user switched it on)
+      try {
+        await BotEngine.runDeriv(running.items, premium: user.premium);
+      } catch (error) {
+        debugPrint('Bot run failed: $error');
+      }
       final prefs = await SharedPreferences.getInstance();
       await prefs.reload();
       final key = _eventsKey(user.id);
@@ -72,7 +80,9 @@ void backgroundSignalDispatcher() {
         return true;
       }
 
-      final alerts = unseenSignalAlerts(signals, delivered, user.notifications);
+      final alerts = (prefs.getBool(_alertsKey) ?? true)
+          ? unseenSignalAlerts(signals, delivered, user.notifications)
+          : const <SignalAlert>[];
       if (alerts.isNotEmpty) {
         final notifications = FlutterLocalNotificationsPlugin();
         await notifications.initialize(
@@ -216,7 +226,14 @@ class BackgroundSignalService {
         }
       }
       if (generation != _generation) return;
+      // The trading bot needs the background check even when alerts come by push or are off.
+      final botOn = (await BotEngine.settings()).derivOn;
       if (primaryPushReady || (!user.notifications.signals && !user.notifications.results)) {
+        if (botOn) {
+          await _setAlerts(false);
+          await ensureScheduled();
+          return;
+        }
         await Workmanager().cancelByUniqueName(_uniqueTask);
         await _notifications.cancelAll();
         _pendingSignal = null;
@@ -229,6 +246,11 @@ class BackgroundSignalService {
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
           ?.requestNotificationsPermission();
       if (allowed == false) {
+        if (botOn) {
+          await _setAlerts(false);
+          await ensureScheduled();
+          return;
+        }
         await Workmanager().cancelByUniqueName(_uniqueTask);
         await _notifications.cancelAll();
         _pendingSignal = null;
@@ -250,14 +272,28 @@ class BackgroundSignalService {
         }
       }
       if (generation != _generation) return;
+      await _setAlerts(true);
+      await ensureScheduled();
+    } catch (error) {
+      debugPrint('Could not schedule background signal polling: $error');
+    }
+  }
+
+  static Future<void> _setAlerts(bool on) async =>
+      (await SharedPreferences.getInstance()).setBool(_alertsKey, on);
+
+  /// Schedules the background check (signal alerts and the trading bot).
+  static Future<void> ensureScheduled() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android || AppConfig.isDemo) return;
+    try {
       await Workmanager().registerPeriodicTask(
         _uniqueTask, _taskName,
-        frequency: const Duration(minutes: 20),
+        frequency: const Duration(minutes: 15),
         existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
         constraints: Constraints(networkType: NetworkType.connected),
       );
     } catch (error) {
-      debugPrint('Could not schedule background signal polling: $error');
+      debugPrint('Could not schedule background check: $error');
     }
   }
 

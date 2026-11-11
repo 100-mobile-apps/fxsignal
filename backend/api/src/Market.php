@@ -44,6 +44,8 @@ final class Market
                 'free_max_strength' => Billing::freeMaxStrength(),
                 'price_display' => config('price_display', (object) []),
             ],
+            // Trading bot switches (editable on /admin). deriv_app_id comes from developers.deriv.com.
+            'bot' => (array) config('bot', []) + ['paper' => true, 'copy' => true, 'deriv' => true, 'deriv_app_id' => ''],
             'promo' => config('promo', ['coffee' => true, 'whatsapp' => true, 'hire' => true]),
         ]);
     }

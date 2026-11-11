@@ -19,7 +19,7 @@ if (!getenv('FX_CONFIG') && is_file(__DIR__ . '/config.premium.php')) {
 /** Settings the admin page may change; stored in the `settings` table and override the config files. */
 const ADMIN_SETTINGS = [
     'premium_enforced', 'premium_test_emails', 'premium_emails', 'premium_markets', 'free_max_strength',
-    'pairs', 'min_confidence', 'price_display', 'email_campaigns',
+    'pairs', 'min_confidence', 'price_display', 'email_campaigns', 'bot',
 ];
 
 function config(string $key, $default = null)

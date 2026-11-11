@@ -389,6 +389,10 @@ class DemoApi extends Api {
   }
 
   @override
+  Future<Map<String, dynamic>> botConfig() async =>
+      const {'paper': true, 'copy': true, 'deriv': false, 'deriv_app_id': ''};
+
+  @override
   Future<Map<String, bool>> promo() async => const {'coffee': true, 'whatsapp': true, 'hire': true};
 
   @override
