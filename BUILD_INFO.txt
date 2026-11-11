@@ -1,0 +1,1 @@
+commit=5acfeb02e8121127f2dbec267f49ef8f09630f67 signed_with_upload_key=true run=43062784590 api_url=https://forexsignal.bulksend.top/api

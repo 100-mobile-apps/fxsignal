@@ -1,0 +1,27 @@
+
+::group::✅ Passing tests
+✅ /home/runner/work/fxsignal/fxsignal/app/test/bot_test.dart: Deriv order sizing stop loss costs about the chosen risk and stays within the stake
+✅ /home/runner/work/fxsignal/fxsignal/app/test/bot_test.dart: Deriv order sizing sell orders and gold
+✅ /home/runner/work/fxsignal/fxsignal/app/test/bot_test.dart: Deriv order sizing refuses when price ran away, stop too wide, or past the stop
+✅ /home/runner/work/fxsignal/fxsignal/app/test/bot_test.dart: Paper auto-pilot compounds closed results at the chosen risk and skips locked or other markets
+✅ /home/runner/work/fxsignal/fxsignal/app/test/bot_test.dart: copy-trade lot size
+✅ /home/runner/work/fxsignal/fxsignal/app/test/widget_test.dart: uptrend produces a BUY with levels on the right side
+✅ /home/runner/work/fxsignal/fxsignal/app/test/widget_test.dart: flat market gives WAIT
+✅ /home/runner/work/fxsignal/fxsignal/app/test/widget_test.dart: pip formatting
+✅ /home/runner/work/fxsignal/fxsignal/app/test/widget_test.dart: parses a server signal
+✅ /home/runner/work/fxsignal/fxsignal/app/test/remote_api_test.dart: reads server-side push availability for fallback scheduling
+✅ /home/runner/work/fxsignal/fxsignal/app/test/remote_api_test.dart: retries a same-origin 307 to a canonical path once
+✅ /home/runner/work/fxsignal/fxsignal/app/test/remote_api_test.dart: never forwards login credentials to a redirect on another origin
+✅ /home/runner/work/fxsignal/fxsignal/app/test/remote_api_test.dart: preserves login POST only across a same-origin canonical 307
+✅ /home/runner/work/fxsignal/fxsignal/app/test/remote_api_test.dart: does not replay a login to an unrelated path on the same host
+✅ /home/runner/work/fxsignal/fxsignal/app/test/remote_api_test.dart: sends the app build so the server can tell new apps from old ones
+✅ /home/runner/work/fxsignal/fxsignal/app/test/remote_api_test.dart: parses a locked live signal without levels
+✅ /home/runner/work/fxsignal/fxsignal/app/test/remote_api_test.dart: sends the purchase to the server for verification
+✅ /home/runner/work/fxsignal/fxsignal/app/test/widget_test.dart: demo stats add up
+✅ /home/runner/work/fxsignal/fxsignal/app/test/widget_test.dart: legal screen renders
+✅ /home/runner/work/fxsignal/fxsignal/app/test/notification_history_test.dart: minor loss hides only small negative expiries
+✅ /home/runner/work/fxsignal/fxsignal/app/test/notification_history_test.dart: background event selection respects stages, pairs and preferences
+✅ /home/runner/work/fxsignal/fxsignal/app/test/notification_history_test.dart: history collapses small losses but keeps them accessible
+::endgroup::
+
+🎉 22 tests passed.

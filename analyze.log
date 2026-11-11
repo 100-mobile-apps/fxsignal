@@ -1,0 +1,9 @@
+Analyzing app...                                                
+
+   info • The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart'. Try removing the import directive • lib/core/theme.dart:1:8 • unnecessary_import
+warning • The '!' will have no effect because the receiver can't be null. Try removing the '!' operator • lib/data/demo_api.dart:232:32 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null. Try removing the '!' operator • lib/data/demo_api.dart:245:25 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null. Try removing the '!' operator • lib/data/demo_api.dart:246:29 • unnecessary_non_null_assertion
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre. Try replacing the use of the deprecated member with the replacement • lib/screens/tools_screen.dart:144:9 • deprecated_member_use
+
+5 issues found. (ran in 7.0s)
