@@ -59,7 +59,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
     }
     final selected = _plan == Plan.yearly ? yearly : monthly;
     final trial = selected?.hasFreeTrial ?? AppConfig.isDemo;
-    final priceAfter = _plan == Plan.yearly ? '$yearPrice/year' : '$monthPrice/month';
+    final regularAfter = _plan == Plan.yearly ? '$yearPrice/year' : '$monthPrice/month';
+    final intro = selected?.introPrice;
+    final priceAfter = intro == null
+        ? regularAfter
+        : _plan == Plan.yearly
+            ? '$intro for the first year, then $regularAfter'
+            : '$intro/month for ${selected!.introCycles} months, then $regularAfter';
 
     return Scaffold(
       body: Container(
@@ -135,12 +141,16 @@ class _PaywallScreenState extends State<PaywallScreen> {
               _PlanTile(
                 selected: _plan == Plan.yearly,
                 title: 'Yearly',
-                badge: savePct > 0 ? 'SAVE $savePct%' : null,
-                subtitle: 'Just $perMonth/month, billed $yearPrice yearly',
-                price: yearPrice,
-                note: monthly != null
-                    ? '${monthly.base.currencySymbol}${(monthly.base.rawPrice * 12).toStringAsFixed(0)}'
-                    : r'$60',
+                badge: yearly?.introPrice != null ? 'LAUNCH OFFER' : (savePct > 0 ? 'SAVE $savePct%' : null),
+                subtitle: yearly?.introPrice != null
+                    ? 'First year, then $yearPrice/year'
+                    : 'Just $perMonth/month, billed $yearPrice yearly',
+                price: yearly?.introPrice ?? yearPrice,
+                note: yearly?.introPrice != null
+                    ? yearPrice
+                    : monthly != null
+                        ? '${monthly.base.currencySymbol}${(monthly.base.rawPrice * 12).toStringAsFixed(0)}'
+                        : r'$60',
                 strike: true,
                 onTap: () => setState(() => _plan = Plan.yearly),
               ),
@@ -148,9 +158,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
               _PlanTile(
                 selected: _plan == Plan.monthly,
                 title: 'Monthly',
-                subtitle: 'Billed every month',
-                price: monthPrice,
-                note: 'per month',
+                badge: monthly?.introPrice != null ? 'LAUNCH OFFER' : null,
+                subtitle: monthly?.introPrice != null
+                    ? 'For ${monthly!.introCycles} months, then $monthPrice/month'
+                    : 'Billed every month',
+                price: monthly?.introPrice ?? monthPrice,
+                note: monthly?.introPrice != null ? monthPrice : 'per month',
+                strike: monthly?.introPrice != null,
                 onTap: () => setState(() => _plan = Plan.monthly),
               ),
               const SizedBox(height: 18),

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
@@ -20,7 +22,12 @@ class PlanOffer {
   /// The paid base plan (regular recurring price, localised by Google, e.g. "$36.00").
   final ProductDetails base;
   final bool hasFreeTrial;
-  const PlanOffer(this.plan, this.purchase, this.base, this.hasFreeTrial);
+
+  /// Discounted price after the trial (launch offer), e.g. "$1.50", and how many billing periods it lasts.
+  final String? introPrice;
+  final int introCycles;
+  const PlanOffer(this.plan, this.purchase, this.base, this.hasFreeTrial,
+      {this.introPrice, this.introCycles = 0});
 
   String get price => base.price;
 
@@ -77,13 +84,23 @@ class BillingStore extends ChangeNotifier {
       final next = <Plan, PlanOffer>{};
       for (final plan in Plan.values) {
         // Google returns one entry per offer: the base plan and, if eligible, the free-trial offer.
+        // Google only lists offers this user is eligible for (new customers).
         final entries = r.productDetails.where((d) => d.id == productId(plan)).toList();
         if (entries.isEmpty) continue;
+        final launch = entries.where((d) => _offerId(d) == 'launch').firstOrNull;
+        final baseEntry = entries.where((d) => _offerId(d) == null).firstOrNull;
         final paid = entries.where((d) => d.rawPrice > 0).toList()
-          ..sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
+          ..sort((a, b) => b.rawPrice.compareTo(a.rawPrice));
         final trial = entries.where((d) => d.rawPrice == 0).toList();
-        final base = paid.isNotEmpty ? paid.first : entries.first;
-        next[plan] = PlanOffer(plan, trial.isNotEmpty ? trial.first : base, base, trial.isNotEmpty);
+        final base = baseEntry ?? (paid.isNotEmpty ? paid.first : entries.first);
+        if (launch != null) {
+          final phases = _phases(launch);
+          final intro = phases.where((ph) => ph.priceAmountMicros > 0 && ph.recurrenceMode != RecurrenceMode.infiniteRecurring).firstOrNull;
+          next[plan] = PlanOffer(plan, launch, base, phases.any((ph) => ph.priceAmountMicros == 0),
+              introPrice: intro?.formattedPrice, introCycles: intro?.billingCycleCount ?? 0);
+        } else {
+          next[plan] = PlanOffer(plan, trial.isNotEmpty ? trial.first : base, base, trial.isNotEmpty);
+        }
       }
       offers = next;
       if (offers.isEmpty) {
@@ -95,6 +112,16 @@ class BillingStore extends ChangeNotifier {
     loading = false;
     notifyListeners();
   }
+
+  static SubscriptionOfferDetailsWrapper? _offer(ProductDetails d) {
+    if (d is! GooglePlayProductDetails) return null;
+    final i = d.subscriptionIndex;
+    final all = d.productDetails.subscriptionOfferDetails;
+    return (i == null || all == null || i >= all.length) ? null : all[i];
+  }
+
+  static String? _offerId(ProductDetails d) => _offer(d)?.offerId;
+  static List<PricingPhaseWrapper> _phases(ProductDetails d) => _offer(d)?.pricingPhases ?? const [];
 
   /// Starts Google Play checkout. Returns true when premium is active (demo mode only — the
   /// real flow completes through [_onPurchases]).
