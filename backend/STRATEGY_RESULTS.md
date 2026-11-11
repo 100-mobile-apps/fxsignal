@@ -41,3 +41,22 @@ node backend/tests/strategy_research/fetch_dukascopy.js           # needs intern
 php backend/tests/strategy_research/run_h4.php all.csv pairs live   # production engine on 4h candles
 php backend/tests/strategy_research/run_h1.php all.csv - base       # old strategy on 1h candles
 ```
+
+## Phase 2 (Nov 2026): new markets and the free/Premium split
+
+Same method: H4 candles from Dukascopy hourly data, in-sample 2022–2024, out-of-sample 2025–Nov 2026, costs included (BTC 30, ETH 20, US100 2, US30 4 points).
+
+| Market | Strategy | Result | Decision |
+|---|---|---|---|
+| BTC/USD, ETH/USD | 55-bar Donchian breakout, EMA50/EMA200 trend filter, SL 2 ATR, TP1 2 ATR, TP2 4 ATR | ≈58% reach TP1, +0.081R (IS) / +0.088R (OOS) per signal | Added (Premium-only) |
+| US100, US30 | Breakout, pullback and range variants tested | No variant was profitable in both periods | Not added yet |
+
+Forex strength split (published signals are 65%+; London-session setups now score 62–70, others 72–95):
+
+| Bucket | IS | OOS | Frequency |
+|---|---|---|---|
+| Above 70% (Premium) | 71.7% TP1, +0.047R | 72.3% TP1, +0.049R | ≈2 per week |
+| 65–70% (free) | 54.8% TP1, −0.200R | 76.9% TP1, +0.131R | ≈0.3 per week |
+| 60–70% (if the free floor were lowered to 60) | 67.7% TP1, −0.020R | 65.6% TP1, −0.065R | ≈0.85 per week |
+
+Lowering the floor triples free signals but they lose slightly, so the floor stays at 65 by default (editable on /admin).
