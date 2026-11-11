@@ -58,7 +58,6 @@ class _PaywallScreenState extends State<PaywallScreen> {
       savePct = (100 * (1 - yearly.base.rawPrice / (monthly.base.rawPrice * 12))).round();
     }
     final selected = _plan == Plan.yearly ? yearly : monthly;
-    final trial = selected?.hasFreeTrial ?? AppConfig.isDemo;
     final regularAfter = _plan == Plan.yearly ? '$yearPrice/year' : '$monthPrice/month';
     final intro = selected?.introPrice;
     final priceAfter = intro == null
@@ -179,15 +178,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   child: InfoBanner(icon: Icons.info_outline_rounded, color: AppColors.gold, text: billing.notice!),
                 ),
               GoldButton(
-                label: trial ? 'Start 7-day free trial' : 'Subscribe',
+                label: 'Subscribe',
                 loading: billing.busy || billing.loading,
                 onPressed: (billing.available || AppConfig.isDemo) ? () => billing.buy(_plan) : null,
               ),
               const SizedBox(height: 10),
               Text(
-                trial
-                    ? 'Free for 7 days, then $priceAfter. Cancel anytime in Google Play.'
-                    : '$priceAfter. Renews automatically. Cancel anytime in Google Play.',
+                '$priceAfter. Renews automatically. Cancel anytime in Google Play.',
                 textAlign: TextAlign.center,
                 style: AppText.caption,
               ),

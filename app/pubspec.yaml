@@ -1,7 +1,7 @@
 name: forex_signals
 description: Forex Signals Live — free forex & gold signals with entry, stop loss and take profit.
 publish_to: 'none'
-version: 1.2.1+7
+version: 1.2.2+8
 
 environment:
   sdk: '>=3.6.0 <4.0.0'
