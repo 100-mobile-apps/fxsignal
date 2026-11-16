@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'backend/web/index.php'
+      - 'backend/web/admin.php'
       - '.github/workflows/web-lint.yml'
   push:
     branches: [feature/web-portal]
@@ -12,4 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check PHP syntax
-        run: |\n          php -l backend/web/index.php\n          php -l backend/web/admin.php
+        run: |
+          php -l backend/web/index.php
+          php -l backend/web/admin.php
