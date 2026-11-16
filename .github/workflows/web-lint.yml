@@ -16,3 +16,11 @@ jobs:
         run: |
           php -l backend/web/index.php
           php -l backend/web/admin.php
+      - name: Render public pages
+        run: |
+          php -S 127.0.0.1:8765 -t backend > /tmp/web-portal-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for page in '' '?page=about' '?page=faq' '?page=login'; do
+            curl --fail --silent --show-error "http://127.0.0.1:8765/web/$page" | grep -q '<!doctype html>'
+          done
