@@ -67,4 +67,7 @@ return [
 
     'cors_origin' => '*',
     'debug' => false,
+    // Hash of the separate website admin password. Keep this in private config.php only.
+    'web_admin_password_hash' => '',
+
 ];

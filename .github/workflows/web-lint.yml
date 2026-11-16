@@ -1,0 +1,30 @@
+name: Web portal lint
+on:
+  pull_request:
+    paths:
+      - 'backend/web/index.php'
+      - 'backend/web/admin.php'
+      - '.github/workflows/web-lint.yml'
+  push:
+    branches: [feature/web-portal]
+jobs:
+  php-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PHP syntax
+        run: |
+          php -l backend/web/index.php
+          php -l backend/web/admin.php
+      - name: Render public pages
+        run: |
+          php -S 127.0.0.1:8765 -t backend > /tmp/web-portal-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:8765/web/; then break; fi
+            sleep 0.25
+          done
+          for page in '' '?page=about' '?page=faq' '?page=login'; do
+            curl --fail --silent --show-error "http://127.0.0.1:8765/web/$page" | grep -q '<!doctype html>'
+          done
