@@ -1,0 +1,15 @@
+name: Web portal lint
+on:
+  pull_request:
+    paths:
+      - 'backend/web/index.php'
+      - '.github/workflows/web-lint.yml'
+  push:
+    branches: [feature/web-portal]
+jobs:
+  php-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PHP syntax
+        run: php -l backend/web/index.php
