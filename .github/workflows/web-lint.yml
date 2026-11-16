@@ -12,4 +12,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check PHP syntax
-        run: php -l backend/web/index.php
+        run: |\n          php -l backend/web/index.php\n          php -l backend/web/admin.php
