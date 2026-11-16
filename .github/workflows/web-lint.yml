@@ -21,6 +21,10 @@ jobs:
           php -S 127.0.0.1:8765 -t backend > /tmp/web-portal-server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:8765/web/; then break; fi
+            sleep 0.25
+          done
           for page in '' '?page=about' '?page=faq' '?page=login'; do
             curl --fail --silent --show-error "http://127.0.0.1:8765/web/$page" | grep -q '<!doctype html>'
           done
