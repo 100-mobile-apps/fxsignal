@@ -1,4 +1,6 @@
+import '../models/gold_test.dart';
 import '../models/models.dart';
+import '../models/money.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -31,12 +33,31 @@ abstract class Api {
   Future<AppUser> updateNotifications(NotificationPrefs prefs);
   Future<AppUser> updateWatchlist(List<String> symbols);
 
+  /// [allMarkets] false returns only the viewer's markets (their choice, else the best 3 right now).
   Future<SignalPage> signals(
-      {required bool running, int page = 1, DateTime? from, DateTime? to});
+      {required bool running, int page = 1, DateTime? from, DateTime? to, bool allMarkets = false});
   Future<ReportsData> reports(String period);
   Future<TradeSignal> signal(int id);
-  Future<Stats> stats(int days);
+  Future<Stats> stats(int days, {bool allMarkets = false});
   Future<List<PriceQuote>> prices();
+
+  /// Dollars and pips at an account size and risk. Only available against the live server.
+  Future<ResultsData> results({required double account, required double risk, String? strategy, String? pairs}) async =>
+      throw const ApiException('Money results need the live server.');
+
+  Future<StrategiesData> strategies() async =>
+      throw const ApiException('Strategies need the live server.');
+
+  /// Saves strategy (null = always the best one), account size and risk percent.
+  Future<AppUser> updatePreferences({String? strategy, bool setStrategy = false, double? accountSize, double? riskPct}) async =>
+      throw const ApiException('Saving preferences needs the live server.');
+
+  /// The user's personal key for the MetaTrader bot. [rotate] replaces it with a new one.
+  Future<BotKey> botKey({bool rotate = false}) async =>
+      throw const ApiException('The auto-trade bot needs the live server.');
+
+  /// The gold live test: its fixed rules and live figures. Only available against the live server.
+  Future<GoldTestData> goldTest() async => throw const ApiException('The gold live test needs the live server.');
 
   /// Which developer links to show (server-controlled). Keys: coffee, whatsapp, hire.
   Future<Map<String, bool>> promo();

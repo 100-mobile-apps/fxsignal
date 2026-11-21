@@ -3,10 +3,13 @@ import 'package:provider/provider.dart';
 
 import '../core/format.dart';
 import '../core/theme.dart';
+import '../models/models.dart';
 import '../state/data_stores.dart';
 import '../state/session_store.dart';
+import '../widgets/alert_banner.dart';
 import '../widgets/common.dart';
 import '../widgets/signal_card.dart';
+import 'profile_screens.dart';
 import 'signal_detail_screen.dart';
 
 void openSignal(BuildContext context, int id) {
@@ -92,14 +95,25 @@ class _SignalsScreenState extends State<SignalsScreen> {
                 ),
                 const SizedBox(height: 18),
                 const DemoBanner(),
+                const AlertBanner(),
                 _PerformanceCard(
                   winRate: stats?.winRate,
                   pips: stats?.totalPips,
                   total: stats?.total,
                   active: store.running.length,
+                  allMarkets: store.allMarkets,
                   onTap: widget.onSeeResults,
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 12),
+                _MarketsBar(
+                  scope: store.markets,
+                  all: store.allMarkets,
+                  onChanged: (v) {
+                    store.setAllMarkets(v);
+                    context.read<StatsStore>().setAllMarkets(v);
+                  },
+                ),
+                const SizedBox(height: 18),
                 _Segmented(
                   left: 'Active (${store.running.length})',
                   right: 'History',
@@ -255,12 +269,14 @@ class _PerformanceCard extends StatelessWidget {
   final double? winRate, pips;
   final int? total;
   final int active;
+  final bool allMarkets;
   final VoidCallback onTap;
   const _PerformanceCard(
       {required this.winRate,
       required this.pips,
       required this.total,
       required this.active,
+      this.allMarkets = false,
       required this.onTap});
 
   @override
@@ -281,10 +297,10 @@ class _PerformanceCard extends StatelessWidget {
             children: [
               const Icon(Icons.verified_rounded, color: AppColors.gold, size: 18),
               const SizedBox(width: 6),
-              const Expanded(
-                child: Text('Last 30 days performance',
+              Expanded(
+                child: Text(allMarkets ? 'Last 30 days · all markets' : 'Last 30 days · your markets',
                     maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: AppColors.text2, fontWeight: FontWeight.w600)),
+                    style: const TextStyle(fontSize: 13, color: AppColors.text2, fontWeight: FontWeight.w600)),
               ),
               Text('View results',
                   style: TextStyle(fontSize: 12, color: AppColors.gold.withValues(alpha: 0.9))),
@@ -307,6 +323,76 @@ class _PerformanceCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Which markets the lists show, why, and a switch to see every market. Tap to change markets.
+class _MarketsBar extends StatelessWidget {
+  final MarketsScope? scope;
+  final bool all;
+  final ValueChanged<bool> onChanged;
+  const _MarketsBar({required this.scope, required this.all, required this.onChanged});
+
+  static String _name(String p) => p == 'XAU/USD' ? 'Gold' : p;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = scope;
+    final names = (s?.markets ?? const <String>[]).map(_name).join(', ');
+    final String title;
+    final String why;
+    if (all) {
+      title = 'Showing all markets';
+      why = s == null || s.bestMarkets.isEmpty
+          ? 'Including markets that have been losing lately.'
+          : 'Best right now: ${s.bestMarkets.map(_name).join(', ')}. Others have been weaker lately.';
+    } else {
+      title = names.isEmpty ? 'Your markets' : 'Your markets: $names';
+      why = switch (s?.source) {
+        'chosen' => 'The markets you picked.',
+        'default' => 'Gold until enough recent results pick the best markets.',
+        _ => 'Gold, plus the best markets of the last 14 days after trading costs. Updated as results come in.',
+      };
+    }
+    return GestureDetector(
+      onTap: () => Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => const NotificationSettingsScreen())),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.public_rounded, size: 18, color: AppColors.gold),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: AppColors.text)),
+                  const SizedBox(height: 2),
+                  Text(why, style: AppText.caption),
+                  const SizedBox(height: 3),
+                  const Text('Change markets ›',
+                      style: TextStyle(fontSize: 12, color: AppColors.gold, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Switch(value: all, onChanged: onChanged, activeThumbColor: AppColors.gold),
+                const Text('All', style: AppText.label),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

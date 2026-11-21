@@ -5,16 +5,17 @@ declare(strict_types=1);
 final class Notify
 {
     /** Verified users with an email preference on, filtered by followed pairs. */
-    private static function recipients(string $column, ?string $pair): array
+    private static function recipients(string $column, ?string $pair, ?string $strategy = null): array
     {
         $allowed = ['email_signals', 'email_results', 'email_daily', 'email_weekly', 'email_monthly'];
         if (!in_array($column, $allowed, true)) throw new InvalidArgumentException($column);
-        $rows = Db::all("SELECT id, name, email, notify_pairs FROM users WHERE email_verified_at IS NOT NULL AND $column = 1");
+        $rows = Db::all("SELECT id, name, email, notify_pairs, strategy FROM users WHERE email_verified_at IS NOT NULL AND $column = 1");
         if ($pair === null) return $rows;
-        return array_values(array_filter($rows, function ($u) use ($pair) {
-            if (!$u['notify_pairs']) return true;
-            $pairs = json_decode($u['notify_pairs'], true);
-            return !is_array($pairs) || in_array($pair, $pairs, true);
+        return array_values(array_filter($rows, function ($u) use ($pair, $strategy) {
+            // People get the strategy they picked (or the current best one if they never picked).
+            if ($strategy !== null && MarketRank::effectiveStrategy($u['strategy'] ?? null) !== $strategy) return false;
+            // Their own markets, else the best recent markets (same rule as the Signals tab).
+            return in_array($pair, user_pairs($u), true);
         }));
     }
 
@@ -36,12 +37,16 @@ final class Notify
         $pair = $s['pair'];
         $f = fn($v) => number_format((float) $v, price_decimals($pair), '.', '');
         $emoji = $s['direction'] === 'BUY' ? '🟢' : '🔴';
-        Fcm::sendToTopic('signals_' . topic_key($pair),
-            "$emoji {$s['direction']} $pair @ " . $f($s['entry']),
-            'SL ' . $f($s['stop_loss']) . ' · TP1 ' . $f($s['tp1']) . ' · TP2 ' . $f($s['tp2']) . " · {$s['confidence']}% strength",
-            ['signal_id' => $s['id'], 'type' => 'signal']);
+        $strategy = (string) ($s['strategy'] ?? 'classic');
+        $title = "$emoji {$s['direction']} $pair @ " . $f($s['entry']);
+        $body = 'SL ' . $f($s['stop_loss']) . ' · TP1 ' . $f($s['tp1']) . ' · TP2 ' . $f($s['tp2']) . ' · ' . Strategies::name($strategy)
+            . ' · Tip: split into 2 trades (TP1 & TP2)';
+        $data = ['signal_id' => $s['id'], 'type' => 'signal', 'strategy' => $strategy];
+        Fcm::sendToTopic('signals_' . topic_key($pair) . '_' . $strategy, $title, $body, $data);
+        // Older app versions only know the per-market topic; they keep receiving the classic strategy.
+        if ($strategy === 'classic') Fcm::sendToTopic('signals_' . topic_key($pair), $title, $body, $data);
         $n = 0;
-        foreach (self::recipients('email_signals', $pair) as $u) {
+        foreach (self::recipients('email_signals', $pair, $strategy) as $u) {
             $unsub = self::unsubscribeUrl((int) $u['id'], 'email_signals');
             [$subj, $html, $text] = EmailTemplates::newSignal($s, $u['name'], $unsub);
             Mailer::queue((int) $u['id'], $u['email'], $subj, $html, $text, $unsub);
@@ -54,20 +59,24 @@ final class Notify
     public static function result(array $s, string $kind): int
     {
         $pair = $s['pair'];
-        $pips = (float) ($kind === 'tp1' ? $s['live_pips'] : $s['pips']);
+        $pips = (float) (in_array($kind, ['tp1', 'lock'], true) ? $s['live_pips'] : $s['pips']);
         $pipsTxt = EmailTemplates::pips($pips) . ' pips';
         [$title, $body] = match ($kind) {
-            'tp1' => ["🎯 $pair TP1 hit $pipsTxt", 'Move your stop loss to entry (' . number_format((float) $s['entry'], price_decimals($pair), '.', '') . ') to lock in a risk-free trade.'],
+            'tp1' => ["🎯 $pair TP1 hit $pipsTxt", 'Your TP1 trade closed in profit. Move the TP2 trade\'s stop loss to entry (' . number_format((float) $s['entry'], price_decimals($pair), '.', '') . ') so it is risk-free.'],
+            'lock' => ["🔒 $pair halfway to TP2 $pipsTxt", 'Move the TP2 trade\'s stop loss to TP1 (' . number_format((float) $s['tp1'], price_decimals($pair), '.', '') . ') to lock in TP1\'s profit.'],
             'tp2' => ["✅ $pair hit TP2 $pipsTxt", "Full target reached on the {$s['direction']} signal."],
             'sl' => ["❌ $pair stopped out $pipsTxt", 'Stop loss was hit. Stick to your risk plan.'],
-            'tp1_close' => ["✅ $pair closed in profit $pipsTxt", 'TP1 was reached; the rest closed at break-even.'],
+            'tp1_close' => ["✅ $pair closed in profit $pipsTxt", 'TP1 was banked on half the trade; the TP2 half closed at entry or at the time limit.'],
             default => ["⏱ $pair signal expired $pipsTxt", 'Closed at market price after the time limit.'],
         };
-        Fcm::sendToTopic('results_' . topic_key($pair), $title, $body, ['signal_id' => $s['id'], 'type' => $kind]);
+        $strategy = (string) ($s['strategy'] ?? 'classic');
+        $data = ['signal_id' => $s['id'], 'type' => $kind, 'strategy' => $strategy];
+        Fcm::sendToTopic('results_' . topic_key($pair) . '_' . $strategy, $title, $body, $data);
+        if ($strategy === 'classic') Fcm::sendToTopic('results_' . topic_key($pair), $title, $body, $data);
         // TP1 is push-only to keep email volume inside hosting limits; the final result is emailed.
-        if ($kind === 'tp1') return 0;
+        if ($kind === 'tp1' || $kind === 'lock') return 0;
         $n = 0;
-        foreach (self::recipients('email_results', $pair) as $u) {
+        foreach (self::recipients('email_results', $pair, $strategy) as $u) {
             $unsub = self::unsubscribeUrl((int) $u['id'], 'email_results');
             [$subj, $html, $text] = EmailTemplates::result($s, $kind, $u['name'], $unsub);
             Mailer::queue((int) $u['id'], $u['email'], $subj, $html, $text, $unsub);

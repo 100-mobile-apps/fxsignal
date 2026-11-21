@@ -23,11 +23,13 @@ String _eventKey(TradeSignal signal) => '${signal.id}:${_stage(signal)}';
 typedef SignalAlert = ({TradeSignal signal, String stage});
 
 List<SignalAlert> unseenSignalAlerts(
-    List<TradeSignal> signals, Set<String> delivered, NotificationPrefs preferences) {
+    List<TradeSignal> signals, Set<String> delivered, NotificationPrefs preferences,
+    {String? strategy}) {
   final alerts = <SignalAlert>[];
   for (final signal in signals) {
     final stage = _stage(signal);
     if (!delivered.contains(_eventKey(signal)) &&
+        (strategy == null || signal.strategy == strategy) &&
         preferences.wantsPair(signal.pair) &&
         (stage == 'open' ? preferences.signals : preferences.results)) {
       alerts.add((signal: signal, stage: stage));
@@ -72,7 +74,8 @@ void backgroundSignalDispatcher() {
         return true;
       }
 
-      final alerts = unseenSignalAlerts(signals, delivered, user.notifications);
+      final alerts = unseenSignalAlerts(signals, delivered, user.notifications,
+          strategy: user.prefs.strategy);
       if (alerts.isNotEmpty) {
         final notifications = FlutterLocalNotificationsPlugin();
         await notifications.initialize(

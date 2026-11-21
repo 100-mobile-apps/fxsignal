@@ -8,6 +8,7 @@ import '../data/api.dart';
 import '../models/models.dart';
 import '../widgets/charts.dart';
 import '../widgets/common.dart';
+import '../widgets/money_widgets.dart';
 import '../widgets/signal_card.dart';
 import '../services/review_service.dart';
 import 'legal_screen.dart';
@@ -94,12 +95,15 @@ class _SignalDetailScreenState extends State<SignalDetailScreen> {
                   _Header(s: s),
                   const SizedBox(height: 14),
                   if (s.isRunning && s.tp1Hit)
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 14),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
                       child: InfoBanner(
                         icon: Icons.shield_outlined,
                         color: AppColors.buy,
-                        text: 'TP1 reached. Move your stop loss to the entry price to make this trade risk-free.',
+                        text: s.lockHit
+                            ? 'Price is past halfway to TP2. Move the stop loss of your TP2 trade to TP1 to lock in TP1\'s profit.'
+                            : 'TP1 reached. Move the stop loss of your TP2 trade to the entry price so it is risk-free. '
+                                'At halfway to TP2, move it to TP1.',
                       ),
                     ),
                   GlassCard(
@@ -120,6 +124,8 @@ class _SignalDetailScreenState extends State<SignalDetailScreen> {
                   ),
                   const SizedBox(height: 14),
                   _Levels(s: s, onCopy: _copy),
+                  const SizedBox(height: 14),
+                  SignalMoneyTable(signal: s),
                   const SizedBox(height: 14),
                   _Timeline(s: s),
                   const SizedBox(height: 14),

@@ -8,6 +8,8 @@ final class Signals
         $out = [
             'id' => (int) $s['id'],
             'pair' => $s['pair'],
+            'strategy' => $s['strategy'] ?? 'classic',
+            'strategy_name' => Strategies::name($s['strategy'] ?? 'classic'),
             'timeframe' => $s['timeframe'],
             'direction' => $s['direction'],
             'entry' => (float) $s['entry'],
@@ -19,6 +21,7 @@ final class Signals
             'status' => $s['status'],
             'result' => $s['result'],
             'tp1_hit_at' => iso($s['tp1_hit_at']),
+            'lock_hit_at' => iso($s['lock_hit_at'] ?? null),
             'opened_at' => iso($s['opened_at']),
             'expires_at' => iso($s['expires_at']),
             'closed_at' => iso($s['closed_at']),
@@ -28,6 +31,12 @@ final class Signals
             'live_pips' => $s['live_pips'] !== null ? (float) $s['live_pips'] : null,
             'updated_at' => iso($s['updated_at']),
         ];
+        $pip = pip_size($s['pair']);
+        $out['stop_pips'] = round(abs((float) $s['entry'] - (float) $s['stop_loss']) / $pip, 1);
+        $out['tp1_pips'] = round(abs((float) $s['tp1'] - (float) $s['entry']) / $pip, 1);
+        $out['tp2_pips'] = round(abs((float) $s['tp2'] - (float) $s['entry']) / $pip, 1);
+        $out['pip_value_per_lot'] = round(pip_value_per_lot($s['pair'], (float) $s['entry']), 4);
+        $out['cost_pips'] = round(spread_pips($s['pair'], (float) $s['entry']), 2);
         if ($withCandles) {
             $out['candles'] = json_decode($s['candles'] ?: '[]', true);
         }
@@ -36,12 +45,12 @@ final class Signals
 
     public static function list(): void
     {
-        Auth::user();
+        $u = Auth::user();
         $status = ($_GET['status'] ?? 'running') === 'closed' ? 'closed' : 'running';
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $per = 20;
-        $params = [$status];
-        $where = 'status = ?';
+        $params = [$status, MarketRank::effectiveStrategy($u['strategy'] ?? null)];
+        $where = 'status = ? AND published = 1 AND strategy = ?';
         // Optional closed-at window for reports: ?from=2026-09-01T00:00:00Z&to=...
         foreach (['from' => '>=', 'to' => '<'] as $k => $op) {
             if (!empty($_GET[$k]) && ($ts = strtotime((string) $_GET[$k])) !== false) {
@@ -52,6 +61,11 @@ final class Signals
         if (!empty($_GET['pair'])) {
             $where .= ' AND pair = ?';
             $params[] = (string) $_GET['pair'];
+            $scope = markets_scope($u)[2];
+        } else {
+            [$sql, $p, $scope] = markets_scope($u);
+            $where .= $sql;
+            array_push($params, ...$p);
         }
         $order = $status === 'closed' ? 'closed_at DESC, id DESC' : 'opened_at DESC, id DESC';
         $offset = ($page - 1) * $per;
@@ -61,6 +75,7 @@ final class Signals
             'items' => array_map([self::class, 'format'], array_slice($rows, 0, $per)),
             'page' => $page,
             'has_more' => $hasMore,
+            'markets' => $scope,
         ]);
     }
 
