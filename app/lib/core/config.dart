@@ -6,7 +6,7 @@
 /// Leave it empty to run in demo mode (simulated prices, no server).
 class AppConfig {
   static const String apiBaseUrl =
-      String.fromEnvironment('API_URL', defaultValue: '');
+      String.fromEnvironment('API_URL', defaultValue: 'https://forexsignal.100apkgoals.com/api');
 
   static const String appName = 'Forex Signals Live';
   static const String supportEmail = 'swalafblog@gmail.com';
