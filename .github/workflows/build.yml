@@ -85,6 +85,7 @@ jobs:
       - name: Collect outputs
         if: always()
         run: |
+          mkdir -p ../out
           V=$(grep '^version:' pubspec.yaml | awk '{print $2}' | tr '+' '-')
           cp build/app/outputs/bundle/release/app-release.aab ../out/forex-signals-$V-$SIGNING.aab 2>/dev/null || true
           cp build/app/outputs/flutter-apk/app-release.apk ../out/forex-signals-$V-$SIGNING.apk 2>/dev/null || true
