@@ -308,8 +308,10 @@ final class Billing
         $auto = !empty($item['autoRenewingPlan']['autoRenewEnabled']) ? 1 : 0;
         $phase = isset($item['offerPhase']['freeTrial']) ? 'trial' : (isset($item['offerPhase']['introductoryPrice']) ? 'intro' : 'base');
         $sealed = self::seal($token);
+        $before = Db::one('SELECT order_id FROM subscriptions WHERE token_hash = ?', [$hash]);
+        $orderId = (string) ($data['latestOrderId'] ?? '');
 
-        if (Db::one('SELECT id FROM subscriptions WHERE token_hash = ?', [$hash])) {
+        if ($before) {
             Db::exec('UPDATE subscriptions SET product_id = ?, plan = ?, phase = ?, state = ?, expires_at = ?, auto_renewing = ?, order_id = ?,
                       test_purchase = ?, last_checked_at = ?, updated_at = ? WHERE token_hash = ?',
                 [$productId, $plan, $phase, $state, $expiresAt, $auto, $data['latestOrderId'] ?? null,
@@ -325,17 +327,32 @@ final class Billing
             Db::exec("UPDATE subscriptions SET state = 'REPLACED', updated_at = ? WHERE token_hash = ? AND user_id = ?",
                 [now($now), hash('sha256', (string) $data['linkedPurchaseToken']), $userId]);
         }
+        // Each new order (first purchase or renewal) is a payment; it earns the referrer's commission.
+        if ($orderId !== '' && in_array($state, self::ENTITLED, true) && ($before['order_id'] ?? null) !== $orderId) {
+            try {
+                Payments::fromPlay($userId, $orderId, (string) $plan, $phase, isset($data['testPurchase']), $now);
+            } catch (Throwable $e) {
+                error_log('payment record failed: ' . $e->getMessage());
+            }
+        }
         self::recompute($userId, $now);
     }
 
     /** premium_until = the latest paid-through time of the user's entitled subscriptions. */
-    private static function recompute(int $userId, int $now): void
+    public static function recompute(int $userId, int $now): void
     {
         $best = null;
         $plan = null;
         foreach (Db::all('SELECT * FROM subscriptions WHERE user_id = ?', [$userId]) as $s) {
             if (!in_array($s['state'], self::ENTITLED, true) || !$s['expires_at']) continue;
             if ($best === null || $s['expires_at'] > $best) { $best = $s['expires_at']; $plan = $s['plan']; }
+        }
+        // Premium bought on the website (Paystack) or granted on /admin
+        $web = Payments::webPaidUntil($userId);
+        if ($web !== null && ($best === null || $web > $best)) {
+            $best = $web;
+            $last = Db::one("SELECT plan FROM payments WHERE user_id = ? AND source IN ('paystack', 'manual') AND status = 'paid' ORDER BY created_at DESC, id DESC LIMIT 1", [$userId]);
+            $plan = $last && !str_starts_with((string) $last['plan'], 'days:') ? 'web_' . $last['plan'] : 'complimentary';
         }
         if ($best !== null && strtotime($best . ' UTC') <= $now) $plan = null;
         Db::exec('UPDATE users SET premium_until = ?, premium_plan = ? WHERE id = ?', [$best, $plan, $userId]);

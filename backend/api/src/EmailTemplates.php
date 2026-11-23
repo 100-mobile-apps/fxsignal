@@ -295,4 +295,43 @@ HTML;
         $reason = $unsub ? "You're getting this because tips and offers emails are on." : 'This is a service message about your subscription.';
         return [$subject, self::layout($paras[0], $inner, $unsub, $reason), $text];
     }
+
+    /** Site address for links in emails (website root). */
+    public static function siteUrl(string $path = ''): string
+    {
+        $site = (string) config('site_url', '');
+        if ($site === '') $site = preg_replace('#/api/?$#', '', (string) config('base_url', ''));
+        return rtrim($site, '/') . $path;
+    }
+
+    /** @return array{0:string,1:string,2:string} */
+    public static function commission(string $name, float $amount, string $plan, int $holdDays): array
+    {
+        $first = trim(explode(' ', trim($name))[0] ?? '') ?: 'there';
+        $amt = '$' . number_format($amount, 2);
+        $url = self::siteUrl('/app/affiliate');
+        $paras = [
+            "Someone you referred just paid for Premium ($plan), so you earned $amt in commission.",
+            "It becomes available to withdraw after $holdDays days (the refund window). You'll earn again every time they renew.",
+        ];
+        $inner = '<div style="font-size:22px;font-weight:800;color:#F4F6FB">You earned ' . self::e($amt) . ', ' . self::e($first) . '</div>';
+        foreach ($paras as $p) $inner .= '<p style="margin:14px 0 0;font-size:15px;line-height:1.6;color:#C9D0DE">' . self::e($p) . '</p>';
+        $inner .= self::linkButton('Open your affiliate dashboard', $url);
+        $text = "You earned $amt\n\n" . implode("\n\n", $paras) . "\n\nDashboard: $url";
+        return ["You earned $amt in commission", self::layout($paras[0], $inner, null, 'You get this because you are in the affiliate programme.'), $text];
+    }
+
+    /** @return array{0:string,1:string,2:string} */
+    public static function payoutPaid(string $name, float $amount, string $reference): array
+    {
+        $amt = '$' . number_format($amount, 2);
+        $url = self::siteUrl('/app/affiliate');
+        $paras = ["Your affiliate payout of $amt has been sent." . ($reference !== '' ? " Reference: $reference." : ''),
+            'Thank you for sharing Forex Signals Live. Keep sharing your link to earn on every renewal.'];
+        $inner = '<div style="font-size:22px;font-weight:800;color:#F4F6FB">Payout sent: ' . self::e($amt) . '</div>';
+        foreach ($paras as $p) $inner .= '<p style="margin:14px 0 0;font-size:15px;line-height:1.6;color:#C9D0DE">' . self::e($p) . '</p>';
+        $inner .= self::linkButton('View payouts', $url);
+        $text = "Payout sent: $amt\n\n" . implode("\n\n", $paras) . "\n\n$url";
+        return ["Your payout of $amt was sent", self::layout($paras[0], $inner, null, 'You get this because you are in the affiliate programme.'), $text];
+    }
 }

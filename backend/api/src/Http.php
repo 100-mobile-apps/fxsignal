@@ -17,10 +17,13 @@ final class Http
     /** Last status sent (read by in-process tests). */
     public static $lastStatus = 200;
 
+    /** true while the website calls API handlers in-process: no HTTP headers are sent. */
+    public static $capture = false;
+
     public static function send($data, int $status = 200): void
     {
         self::$lastStatus = $status;
-        if (!headers_sent()) {
+        if (!self::$capture && !headers_sent()) {
             http_response_code($status);
             header('Content-Type: application/json; charset=utf-8');
         }

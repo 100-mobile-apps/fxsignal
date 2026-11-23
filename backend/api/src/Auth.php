@@ -13,6 +13,7 @@ final class Auth
         if (!$user || (int) $user['token_version'] !== (int) ($payload['v'] ?? -1)) {
             throw new ApiError('Your session has expired. Please log in again.', 401);
         }
+        if (!empty($user['blocked_at'])) throw new ApiError('This account has been suspended. Contact support.', 403);
         // Activity for win-back emails (written at most once an hour)
         $seen = $user['last_seen_at'] ?? null;
         if (array_key_exists('last_seen_at', $user) && (!$seen || strtotime($seen . ' UTC') < time() - 3600)) {
@@ -50,7 +51,19 @@ final class Auth
             ],
             'watchlist' => $u['watchlist'] ? json_decode($u['watchlist'], true) : config('pairs'),
             'signal_pairs' => Signals::chosenPairs($u),
+            'referred' => !empty($u['referred_by']),
+            'broker' => self::brokerField($u),
         ] + Billing::publicFields($u);
+    }
+
+    private static function brokerField(array $u): ?array
+    {
+        try {
+            $b = Affiliates::brokerFor($u);
+            return $b ? ['name' => $b['name'], 'url' => $b['url']] : null;
+        } catch (Throwable $e) {
+            return null;
+        }
     }
 
     private static function session(array $user, int $status = 200): void
@@ -98,6 +111,10 @@ final class Auth
             'INSERT INTO users (name, email, password_hash, created_at, last_login_at) VALUES (?, ?, ?, ?, ?)',
             [$name, $email, password_hash($pw, PASSWORD_DEFAULT), now(), now()]
         );
+        // Referral code from the website link or typed in the app (optional)
+        if (!empty($b['ref']) && is_string($b['ref'])) {
+            try { Affiliates::attach($id, $b['ref'], 'signup'); } catch (Throwable $e) { error_log('referral attach: ' . $e->getMessage()); }
+        }
         $user = Db::one('SELECT * FROM users WHERE id = ?', [$id]);
         self::sendCode($user, 'verify');
         self::session($user, 201);
@@ -165,6 +182,7 @@ final class Auth
         if (!$user || !password_verify($pw, $user['password_hash'])) {
             throw new ApiError('Incorrect email or password.', 401);
         }
+        if (!empty($user['blocked_at'])) throw new ApiError('This account has been suspended. Contact support.', 403);
         Db::exec('UPDATE users SET last_login_at = ? WHERE id = ?', [now(), $user['id']]);
         self::session($user);
     }
