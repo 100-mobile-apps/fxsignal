@@ -1,0 +1,229 @@
+{
+  "project_info": {
+    "project_number": "222013884908",
+    "project_id": "signal-lab-d810c",
+    "storage_bucket": "signal-lab-d810c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222013884908:android:52167dfeb4daf3f68258c9",
+        "android_client_info": {
+          "package_name": "com.forexsignalslive.forex_signals"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQBMzRo-bPggPrbGBSqu0XYW-OInUMTYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222013884908:android:4ab4d7c8d3cf34438258c9",
+        "android_client_info": {
+          "package_name": "com.swiftmynd.crypto_trading_signals"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQBMzRo-bPggPrbGBSqu0XYW-OInUMTYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222013884908:android:5463da389ab384778258c9",
+        "android_client_info": {
+          "package_name": "com.swiftmynd.dayfx_signals"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQBMzRo-bPggPrbGBSqu0XYW-OInUMTYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222013884908:android:9707187d569888668258c9",
+        "android_client_info": {
+          "package_name": "com.swiftmynd.gold_signals_pro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQBMzRo-bPggPrbGBSqu0XYW-OInUMTYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222013884908:android:ecfbe039fe4dcc438258c9",
+        "android_client_info": {
+          "package_name": "com.swiftmynd.indicessignals"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQBMzRo-bPggPrbGBSqu0XYW-OInUMTYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222013884908:android:1bfa1c8c7bf0d8ec8258c9",
+        "android_client_info": {
+          "package_name": "com.swiftmynd.nfpnewssignals"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQBMzRo-bPggPrbGBSqu0XYW-OInUMTYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222013884908:android:c3da0f5efbe04eeb8258c9",
+        "android_client_info": {
+          "package_name": "com.swiftmynd.signal_lab"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "222013884908-0o5fksrag6tl40kmt1tm6uk785ha9joa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.swiftmynd.signal_lab",
+            "certificate_hash": "30b3150c55c81042206c6d417b75d8a49cbb7253"
+          }
+        },
+        {
+          "client_id": "222013884908-komvjb293308m3samdj9c30mv8adj5ul.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.swiftmynd.signal_lab",
+            "certificate_hash": "dca7ec5e522d55d2990d6a95ca86a58ffe9e7537"
+          }
+        },
+        {
+          "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQBMzRo-bPggPrbGBSqu0XYW-OInUMTYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "222013884908-n9pn4sgjipl20s3ilk5ttcl4fmkri7mm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
