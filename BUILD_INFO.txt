@@ -1,0 +1,1 @@
+commit=575cb16ef205ac05bc9f97e4fed1c1a2b45c4612 signed_with_upload_key=true run=45355837491 api_url=https://forexsignal.100apkgoals.com/api
