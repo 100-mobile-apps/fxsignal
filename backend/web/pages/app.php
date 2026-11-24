@@ -103,7 +103,7 @@ function page_signal(array $m): void
     $pipSize = pip_size($s['pair']);
     ?>
 <div class="pagehead"><div><a class="link small" href="<?= $running ? '/app' : '/app/history' ?>">← Back</a><h1><?= flag($s['pair']) ?> <?= e($s['pair']) ?> <span class="dir <?= $buy ? 'buy' : 'sell' ?>"><?= e($s['direction']) ?></span> <span class="status st-<?= e($cls) ?>"><?= e($label) ?></span></h1>
-  <p class="muted"><?= e(strtoupper((string) $s['timeframe'])) ?> chart · opened <?= e(date_local($s['opened_at'])) ?> · ⚡ <?= (int) $s['confidence'] ?>% strength<?= $s['premium'] ? ' · Premium signal' : '' ?></p></div></div>
+  <p class="muted"><?= e(strtoupper((string) $s['timeframe'])) ?> chart · opened <?= e(date_local($s['opened_at'])) ?> · ⚡ <?= (int) $s['confidence'] ?>% strength<?= $s['premium'] && !free_mode() ? ' · Premium signal' : '' ?></p></div></div>
 <div class="detail-grid">
   <div>
     <div class="card"><?= candle_chart((array) ($s['candles'] ?? []), $s['pair'], $levels, $s['current_price']) ?></div>
@@ -301,7 +301,8 @@ function page_account(): void
       <p class="small"><?= $pub['email_verified'] ? '<span class="up">✓ Verified</span>' : '<a class="link" href="/verify">Verify your email</a>' ?> · Member since <?= e(date_local($pub['created_at'], 'j M Y')) ?></p>
       <button class="btn btn-ghost btn-sm">Save name</button></form>
     <div class="card"><h3>Plan</h3>
-      <?php if ($pub['premium']): ?>
+      <?php if (free_mode()): ?><p>Every signal is free. Nothing to pay.</p>
+      <?php elseif ($pub['premium']): ?>
         <p><span class="pill pill-gold">Premium</span> <?= $pub['premium_until'] ? 'until ' . e(date_local($pub['premium_until'], 'j M Y')) : '' ?></p>
         <?php if ($web && in_array($web['status'], ['active', 'attention'], true)): ?>
           <p class="muted small">Website subscription (<?= e($web['plan']) ?>), renews automatically.</p>

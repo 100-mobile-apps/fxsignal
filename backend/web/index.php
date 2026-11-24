@@ -65,6 +65,11 @@ $routes = [
     '#^/app/affiliate$#' => 'page_affiliate',
 ];
 
+if (free_mode()) {
+    if ($path === '/pricing') redirect('/');
+    if (str_starts_with($path, '/app/premium')) redirect('/app');
+}
+
 try {
     foreach ($routes as $re => $fn) {
         if (preg_match($re, $path, $m)) {

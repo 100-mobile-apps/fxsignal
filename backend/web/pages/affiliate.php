@@ -46,14 +46,14 @@ function page_affiliate(): void
     $set = Affiliates::settings();
     if (!$aff) {
         ?>
-<div class="pagehead"><div><h1>Affiliate programme</h1><p class="muted">Earn <?= (int) $set['rate'] ?>% of every Premium payment from people you refer, for as long as they stay subscribed.</p></div></div>
+<div class="pagehead"><div><h1>Affiliate programme</h1><p class="muted"><?= free_mode() ? 'Share free signals with your own link and earn from your broker referral (IB) link.' : 'Earn ' . (int) $set['rate'] . '% of every Premium payment from people you refer, for as long as they stay subscribed.' ?></p></div></div>
 <div class="grid2">
   <div class="card"><h3>How it works</h3><ul class="ticks">
     <li>Get a personal link and code for the website and the Android app</li>
     <li>Visitors are remembered for <?= (int) $set['cookie_days'] ?> days</li>
-    <li><?= (int) $set['rate'] ?>% recurring commission on website and Google Play payments</li>
+    <?php if (!free_mode()): ?><li><?= (int) $set['rate'] ?>% recurring commission on website and Google Play payments</li><?php endif ?>
     <li>Add your own broker IB link: your referrals see it on "Open a broker account"</li>
-    <li>Withdraw from $<?= e(number_format((float) $set['min_payout'], 0)) ?> by bank transfer, USDT or PayPal</li></ul>
+    <?php if (!free_mode()): ?><li>Withdraw from $<?= e(number_format((float) $set['min_payout'], 0)) ?> by bank transfer, USDT or PayPal</li><?php else: ?><li>The broker pays you directly under your IB agreement</li><?php endif ?></ul>
     <a class="link small" href="/affiliate-terms" target="_blank">Read the affiliate terms</a></div>
   <form method="post" class="card form"><?= csrf_field() ?><input type="hidden" name="do" value="join"><h3>Join now, it's free</h3>
     <?php if (!Affiliates::enabled()): ?><p class="note">The programme is closed for new affiliates right now.</p>
@@ -97,7 +97,7 @@ function page_affiliate(): void
 <div class="statgrid five">
   <div class="card kpi"><span>Link visits</span><b><?= number_format($st['visits']) ?></b></div>
   <div class="card kpi"><span>Sign-ups</span><b><?= number_format($st['signups']) ?></b></div>
-  <div class="card kpi"><span>Premium now</span><b class="gold"><?= number_format($st['premium']) ?></b></div>
+  <?php if (!free_mode()): ?><div class="card kpi"><span>Premium now</span><b class="gold"><?= number_format($st['premium']) ?></b></div><?php endif ?>
   <div class="card kpi"><span>Broker clicks</span><b><?= number_format($st['broker_clicks']) ?></b></div>
   <div class="card kpi"><span>Lifetime earnings</span><b class="up"><?= e(money_usd($bal['lifetime'])) ?></b></div>
 </div>

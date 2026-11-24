@@ -76,6 +76,7 @@ function public_header(string $active = ''): void
 {
     $u = current_user();
     $links = ['/results' => 'Results', '/how-it-works' => 'How it works', '/pricing' => 'Pricing', '/affiliates' => 'Affiliates'];
+    if (free_mode()) unset($links['/pricing']);
     ?>
 <header class="topbar"><div class="wrap topbar-in">
   <?= brand_link() ?>
@@ -101,7 +102,7 @@ function site_footer(): void
   <div class="foot-grid">
     <div><?= brand_link() ?><p class="muted small">Free forex and gold signals with entry, stop loss and take profit, tracked openly win or loss.</p>
       <a class="playbadge" href="<?= e(play_url(referral_cookie() ?: null)) ?>" rel="noopener"><?= icon('play') ?><span><small>Get it on</small>Google Play</span></a></div>
-    <div><h4>Product</h4><a href="/results">Track record</a><a href="/how-it-works">How signals work</a><a href="/pricing">Pricing</a><a href="/tools">Free calculators</a></div>
+    <div><h4>Product</h4><a href="/results">Track record</a><a href="/how-it-works">How signals work</a><?php if (!free_mode()): ?><a href="/pricing">Pricing</a><?php endif ?><a href="/tools">Free calculators</a></div>
     <div><h4>Company</h4><a href="/affiliates">Affiliate programme</a><a href="mailto:swalafblog@gmail.com">Contact</a>
       <?php if (!empty($promo['hire'])): ?><a href="<?= e($dev['whatsapp']) ?>" rel="noopener" target="_blank">Hire the developer</a><?php endif ?>
       <?php if (!empty($promo['coffee'])): ?><a href="<?= e($dev['coffee']) ?>" rel="noopener" target="_blank">Buy me a coffee</a><?php endif ?></div>
@@ -138,7 +139,7 @@ function app_start(string $title, string $active, string $heading = '', string $
   <aside class="side" id="side">
     <?= brand_link() ?>
     <nav class="sidenav">
-      <?php foreach (APP_NAV as $href => [$label, $ic]): ?>
+      <?php foreach (APP_NAV as $href => [$label, $ic]): if ($href === '/app/premium' && free_mode()) continue; ?>
         <a href="<?= e($href) ?>" class="<?= $active === $href ? 'on' : '' ?>"><?= icon($ic) ?><span><?= e($label) ?></span>
         <?php if ($href === '/app/premium' && !$pub['premium']): ?><em class="pill pill-gold">Upgrade</em><?php endif ?></a>
       <?php endforeach ?>
@@ -147,7 +148,7 @@ function app_start(string $title, string $active, string $heading = '', string $
     <?= broker_card($u) ?>
     <div class="side-user">
       <div class="avatar"><?= e(mb_strtoupper(mb_substr((string) $u['name'], 0, 1))) ?></div>
-      <div class="side-user-t"><b><?= e($u['name']) ?></b><span><?= $pub['premium'] ? 'Premium' : 'Free plan' ?></span></div>
+      <div class="side-user-t"><b><?= e($u['name']) ?></b><span><?= free_mode() ? 'All signals free' : ($pub['premium'] ? 'Premium' : 'Free plan') ?></span></div>
       <form method="post" action="/logout"><?= csrf_field() ?><button class="iconbtn" title="Log out" aria-label="Log out"><?= icon('logout') ?></button></form>
     </div>
   </aside>
@@ -198,7 +199,7 @@ function signal_card(array $s, array $pub): string
     $pips = $running ? $s['live_pips'] : $s['pips'];
     $h = '<a class="sigcard ' . ($buy ? 'buy' : 'sell') . ($s['locked'] ? ' locked' : '') . '" href="/app/signal/' . (int) $s['id'] . '" data-sig="' . (int) $s['id'] . '">';
     $h .= '<div class="sig-top">' . flag($s['pair']) . '<div class="sig-name"><b>' . e($s['pair']) . '</b> <span class="dir ' . ($buy ? 'buy' : 'sell') . '">' . e($s['direction']) . '</span>';
-    if ($s['premium']) $h .= ' <span class="pill pill-gold">Premium</span>';
+    if ($s['premium'] && !free_mode()) $h .= ' <span class="pill pill-gold">Premium</span>';
     $h .= '<small>' . e(strtoupper((string) $s['timeframe'])) . ' · ' . ($running ? 'Opened ' . e(ago($s['opened_at'])) : 'Closed ' . e(ago($s['closed_at']))) . '</small></div>';
     if ($s['locked']) {
         $h .= '<div class="sig-pips"><span class="lockico">' . icon('lock') . '</span></div>';

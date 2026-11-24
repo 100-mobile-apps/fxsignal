@@ -261,6 +261,9 @@ function money_local(float $amount, string $currency): string
     return $sym . number_format($amount, $amount == floor($amount) ? 0 : 2);
 }
 
+/** Free mode: Premium is switched off, so every signal is free and nothing is for sale. */
+function free_mode(): bool { return !Billing::enforced(); }
+
 /** Prices for the Pricing and Premium pages. */
 function price_info(): array
 {

@@ -29,6 +29,18 @@ function org_jsonld(): array
     ];
 }
 
+const HOME_FAQ_FREE = 'Yes. Every signal is free, including gold (XAU/USD), Bitcoin and Ethereum, with full entry, stop loss and take profit. There is nothing to pay on the website or in the app.';
+
+/** FAQ answers, adjusted while every signal is free. */
+function home_faq(): array
+{
+    if (!free_mode()) return HOME_FAQ;
+    $faq = HOME_FAQ;
+    $faq[0][1] = HOME_FAQ_FREE;
+    foreach ($faq as &$q) $q[1] = str_replace(' Premium works on both.', '', $q[1]);
+    return $faq;
+}
+
 const HOME_FAQ = [
     ['Are the forex signals really free?', 'Yes. Forex signals up to 70% strength are free with full entry, stop loss and take profit. Stronger setups, gold (XAU/USD) and crypto are Premium. Free members can also unlock one Premium signal every two weeks.'],
     ['How are results tracked?', 'Every signal is recorded by the server the moment it is published and closed by fixed rules at TP2, TP1, stop loss or after 5 days. Nothing is edited or deleted, so the track record shows wins and losses.'],
@@ -46,7 +58,7 @@ function page_home(): void
     $recent = recent_closed(6);
     $live = Db::all("SELECT * FROM signals WHERE status = 'running' ORDER BY opened_at DESC LIMIT 4");
     $prices = price_info();
-    $faq = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(fn($q) => ['@type' => 'Question', 'name' => $q[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q[1]]], HOME_FAQ)];
+    $faq = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(fn($q) => ['@type' => 'Question', 'name' => $q[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q[1]]], home_faq())];
     page_start([
         'title' => 'Free Forex Signals & Gold Signals with Entry, SL & TP · ' . BRAND,
         'description' => 'Free forex signals and gold (XAU/USD) signals with entry, stop loss and take profit. Every result tracked openly, daily/weekly/monthly reports, alerts and lot size calculators.',
@@ -65,7 +77,7 @@ function page_home(): void
       <a class="btn btn-gold btn-lg" href="/register">Start free</a>
       <a class="playbadge" href="<?= e(play_url(referral_cookie() ?: null)) ?>" rel="noopener"><?= icon('play') ?><span><small>Get it on</small>Google Play</span></a>
     </div>
-    <ul class="ticks"><li>No card needed</li><li>Same account on web and app</li><li>Cancel Premium anytime</li></ul>
+    <ul class="ticks"><li>No card needed</li><li>Same account on web and app</li><li><?= free_mode() ? 'Every signal free' : 'Cancel Premium anytime' ?></li></ul>
   </div>
   <div class="card hero-card">
     <div class="row-between"><span class="muted small">Track record · all time</span><span class="pill pill-live"><i class="dot"></i> <?= (int) $sum['running'] ?> live</span></div>
@@ -119,6 +131,7 @@ function page_home(): void
   </div>
 </section>
 
+<?php if (!free_mode()): ?>
 <section class="wrap section">
   <div class="card premium-band">
     <div><h2>Go Premium</h2><p class="muted">Unlock every live signal, including gold, crypto and the strongest forex setups, plus instant alerts and the trading bot in the app.</p></div>
@@ -133,14 +146,15 @@ function page_home(): void
     </div>
   </div>
 </section>
+<?php endif ?>
 
 <section class="wrap section">
-  <div class="card affiliate-band"><div><h2>Earn 30% on every subscription you refer</h2><p class="muted">Share your link, earn recurring commission on every Premium payment, and add your own broker link so the people you refer open accounts through you.</p></div><a class="btn btn-ghost" href="/affiliates">Join the affiliate programme</a></div>
+  <div class="card affiliate-band"><div><?php if (free_mode()): ?><h2>Share free signals, earn from your broker link</h2><p class="muted">Get your own referral link, add your broker IB link, and everyone you refer sees it on the "Open a broker account" button, so the broker pays you directly.</p><?php else: ?><h2>Earn 30% on every subscription you refer</h2><p class="muted">Share your link, earn recurring commission on every Premium payment, and add your own broker link so the people you refer open accounts through you.</p><?php endif ?></div><a class="btn btn-ghost" href="/affiliates">Join the affiliate programme</a></div>
 </section>
 
 <section class="wrap section narrow">
   <h2 class="center">Questions</h2>
-  <?php foreach (HOME_FAQ as [$q, $a]): ?><details class="faq"><summary><?= e($q) ?></summary><p><?= e($a) ?></p></details><?php endforeach ?>
+  <?php foreach (home_faq() as [$q, $a]): ?><details class="faq"><summary><?= e($q) ?></summary><p><?= e($a) ?></p></details><?php endforeach ?>
 </section>
 </main>
 <?php
@@ -244,7 +258,7 @@ function page_how(): void
         ['Currency pairs: range reversal', 'In a calm, ranging market (ADX below 20), a candle that closes outside the 20-period Bollinger Band (2 standard deviations) with RSI at 35 or lower (buy) or 65 or higher (sell) signals a likely move back toward the average. Stop loss is 2 × ATR(14) from entry, TP1 is 1 × ATR and TP2 is 2 × ATR.'],
         ['Gold: trend pullback', 'Gold tends to trend, so a signal needs the trend to line up (price against the 200 EMA, 20 EMA against 50 EMA, MACD and RSI, scored out of 100, 65% or more required) and price must have pulled back to within 1 × ATR of the 20 EMA. Stop loss is 1.5 × ATR, TP1 1.5 × ATR and TP2 3 × ATR.'],
         ['How results are recorded', 'Every published signal is tracked automatically on the server. If the stop loss and a target are touched in the same candle, the stop loss is counted first. After TP1 the stop moves to entry; the trade then closes at TP2 (full win) or back at entry (TP1 win). Open signals close at market after 5 days. Signals are never edited or deleted after publishing.'],
-        ['Strength score', 'Each signal shows how many conditions lined up, as a percentage. Forex signals up to 70% strength are free; stronger forex setups, gold and crypto are Premium.'],
+        ['Strength score', 'Each signal shows how many conditions lined up, as a percentage. ' . (free_mode() ? 'Every signal is free, whatever its strength.' : 'Forex signals up to 70% strength are free; stronger forex setups, gold and crypto are Premium.')],
         ['Pips', 'Results are shown in pips before spread and commission. 1 pip = 0.0001 (0.01 for JPY pairs, 0.10 for gold and Ethereum, 1.00 for Bitcoin).'],
     ];
     echo '<main class="wrap narrow section"><h1>How the signals work</h1><p class="lead muted">A rules-based engine, not guesswork. Here is exactly what it does.</p>';
@@ -288,6 +302,7 @@ function page_pricing(): void
 function page_affiliates_public(): void
 {
     $s = Affiliates::settings();
+    if (free_mode()) { page_affiliates_free($s); return; }
     page_start([
         'title' => 'Forex Signals Affiliate Programme: Earn ' . (int) $s['rate'] . '% Recurring · ' . BRAND,
         'description' => 'Share free forex signals and earn ' . (int) $s['rate'] . '% recurring commission on every Premium payment you refer, plus your own broker referral link.',
@@ -391,11 +406,44 @@ function page_legal(array $m): void
     site_footer();
 }
 
+/** Affiliate page while every signal is free: affiliates earn through their own broker (IB) link. */
+function page_affiliates_free(array $s): void
+{
+    page_start([
+        'title' => 'Forex Signals Affiliate Programme: Share Free Signals · ' . BRAND,
+        'description' => 'Share free forex and gold signals with your own referral link and earn from your broker referral (IB) link.',
+        'canonical' => '/affiliates',
+    ]);
+    public_header('/affiliates');
+    ?>
+<main class="wrap section">
+  <div class="center narrow"><span class="eyebrow">Affiliate programme</span><h1>Share <span class="gold">free signals</span>, earn from your broker link</h1>
+    <p class="lead muted">Every signal is free, so people are happy to join through your link. Add your broker referral (IB) link and everyone you bring in sees it when they open a trading account.</p>
+    <a class="btn btn-gold btn-lg" href="/app/affiliate">Join now, it's free</a></div>
+  <div class="grid3 steps">
+    <div><span class="stepn">1</span><h3>Get your link</h3><p class="muted">Join from your account and get a personal link and code for the website and the Android app.</p></div>
+    <div><span class="stepn">2</span><h3>Add your broker link</h3><p class="muted">Paste your broker IB or partner link. After a quick review it replaces the default broker for everyone you refer.</p></div>
+    <div><span class="stepn">3</span><h3>Share it</h3><p class="muted">WhatsApp groups, Telegram, YouTube, TikTok, your blog. Visitors are remembered for <?= (int) $s['cookie_days'] ?> days.</p></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>How you get paid</h3><p class="muted">The broker pays you directly under your own IB agreement, based on the accounts and trading of the people you refer. We don't take a cut.</p></div>
+    <div class="card"><h3>Real-time dashboard</h3><p class="muted">See link visits, sign-ups and clicks on your broker link.</p></div>
+  </div>
+  <div class="narrow">
+    <details class="faq"><summary>Does it work for app installs?</summary><p>Yes. Your Google Play link carries your code, and new users can also type your code when they sign up in the app.</p></details>
+    <details class="faq"><summary>Rules</summary><p>No spam, no fake reviews, no paid ads on our brand name, no promises of profits, and you can't refer yourself. See the <a class="link" href="/affiliate-terms">affiliate terms</a>.</p></details>
+  </div>
+</main>
+<?php
+    site_footer();
+}
+
 function page_sitemap(): void
 {
     header('Content-Type: application/xml; charset=utf-8');
     $urls = ['/' => '1.0', '/results' => '0.9', '/how-it-works' => '0.7', '/pricing' => '0.8', '/tools' => '0.8', '/affiliates' => '0.7',
         '/register' => '0.6', '/login' => '0.4', '/terms' => '0.2', '/privacy' => '0.2', '/risk' => '0.2', '/affiliate-terms' => '0.2'];
+    if (free_mode()) unset($urls['/pricing']);
     echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     foreach ($urls as $u => $pri) echo '<url><loc>' . e(site_url($u)) . '</loc><priority>' . $pri . '</priority></url>';
     echo '</urlset>';
