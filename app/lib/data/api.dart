@@ -17,7 +17,8 @@ abstract class Api {
   String? token;
 
   Future<AuthResult> login(String email, String password);
-  Future<AuthResult> register(String name, String email, String password);
+  /// [ref] is an optional affiliate referral code entered at sign-up.
+  Future<AuthResult> register(String name, String email, String password, {String? ref});
   Future<String> forgotPassword(String email);
   Future<AuthResult> resetPassword(String email, String code, String password);
 

@@ -20,6 +20,7 @@ if (!getenv('FX_CONFIG') && is_file(__DIR__ . '/config.premium.php')) {
 const ADMIN_SETTINGS = [
     'premium_enforced', 'premium_test_emails', 'premium_emails', 'premium_markets', 'free_max_strength',
     'pairs', 'min_confidence', 'price_display', 'email_campaigns', 'bot', 'free_unlock_days',
+    'affiliate', 'broker_default', 'web_pricing', 'play_commission_base',
 ];
 
 function config(string $key, $default = null)
@@ -83,6 +84,9 @@ require_once __DIR__ . '/TwelveData.php';
 require_once __DIR__ . '/GoogleAuth.php';
 require_once __DIR__ . '/Fcm.php';
 require_once __DIR__ . '/Billing.php';
+require_once __DIR__ . '/Payments.php';
+require_once __DIR__ . '/Paystack.php';
+require_once __DIR__ . '/Affiliates.php';
 require_once __DIR__ . '/Campaigns.php';
 require_once __DIR__ . '/Mailer.php';
 require_once __DIR__ . '/Auth.php';
@@ -94,3 +98,4 @@ require_once __DIR__ . '/Cron.php';
 require_once __DIR__ . '/EmailTemplates.php';
 require_once __DIR__ . '/Notify.php';
 require_once __DIR__ . '/Reports.php';
+require_once __DIR__ . '/Routes.php';

@@ -87,6 +87,14 @@ return [
         'coffee' => 'https://buymeacoffee.com/swalafblogM',
     ],
 
+    // Website (served from backend/web): public address without a trailing slash.
+    'site_url' => 'https://forexsignal.100apkgoals.com',
+
+    // Paystack (website Premium). Secret key from Paystack → Settings → API Keys & Webhooks.
+    // Webhook URL to enter there: https://YOUR-DOMAIN/api/billing/paystack
+    // Prices, plan codes, affiliate commission and payout rules are edited in /admin → Settings.
+    'paystack' => ['secret_key' => ''],
+
     'cors_origin' => '*',
     'debug' => false,
 ];

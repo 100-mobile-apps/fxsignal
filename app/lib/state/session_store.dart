@@ -127,8 +127,8 @@ class SessionStore extends ChangeNotifier {
   Future<void> login(String email, String password) async =>
       _start(await api.login(email.trim(), password));
 
-  Future<void> register(String name, String email, String password) async =>
-      _start(await api.register(name.trim(), email.trim(), password));
+  Future<void> register(String name, String email, String password, {String? ref}) async =>
+      _start(await api.register(name.trim(), email.trim(), password, ref: ref));
 
   Future<String> forgotPassword(String email) => api.forgotPassword(email.trim());
 

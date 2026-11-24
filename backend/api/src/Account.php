@@ -42,6 +42,15 @@ final class Account
         Db::exec('DELETE FROM devices WHERE user_id = ?', [$u['id']]);
         // Subscription rows stay (anonymised) so a deleted account's Play token cannot be re-linked to someone else.
         Db::exec('UPDATE subscriptions SET user_id = 0 WHERE user_id = ?', [$u['id']]);
+        try {
+            Db::exec('UPDATE payments SET user_id = 0 WHERE user_id = ?', [$u['id']]);
+            Db::exec('UPDATE web_subscriptions SET user_id = 0 WHERE user_id = ?', [$u['id']]);
+            Db::exec("UPDATE commissions SET status = 'reversed' WHERE affiliate_id = ? AND status IN ('pending', 'approved') AND payout_id IS NULL", [$u['id']]);
+            Db::exec('DELETE FROM affiliates WHERE user_id = ?', [$u['id']]);
+            Db::exec('UPDATE users SET referred_by = NULL WHERE referred_by = ?', [$u['id']]);
+        } catch (Throwable $e) {
+            // affiliate tables not created yet
+        }
         Db::exec('DELETE FROM users WHERE id = ?', [$u['id']]);
         Http::send(['ok' => true]);
     }

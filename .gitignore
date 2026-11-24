@@ -5,3 +5,5 @@ backend/api/src/*service-account*.json
 *.keystore
 key.properties
 backend/api/src/config.premium.php
+backend/tests/web/paystack_state.json
+backend/tests/mailbox/

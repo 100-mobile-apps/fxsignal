@@ -58,6 +58,11 @@ final class Cron
         } catch (Throwable $e) {
             $log[] = 'billing: ' . $e->getMessage();
         }
+        try {
+            if ($n = Affiliates::mature($now)) $log[] = "affiliates: $n commission(s) now available";
+        } catch (Throwable $e) {
+            // affiliate tables not created yet
+        }
         // Automated emails, once an hour
         if ((int) gmdate('i', $now) < 20) {
             try {
