@@ -401,6 +401,12 @@ function page_sitemap(): void
     echo '</urlset>';
 }
 
+function page_robots(): void
+{
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /api\nDisallow: /r/\nDisallow: /go/\n\nSitemap: " . site_url('/sitemap.xml') . "\n";
+}
+
 /** /r/CODE → remember the referrer and go to the home page. */
 function page_ref(array $m): void
 {

@@ -91,12 +91,13 @@ class RemoteApi extends Api {
           body: {'email': email, 'password': password}));
 
   @override
-  Future<AuthResult> register(String name, String email, String password) async =>
+  Future<AuthResult> register(String name, String email, String password, {String? ref}) async =>
       _auth(await _req('POST', '/auth/register', body: {
         'name': name,
         'email': email,
         'password': password,
         'accepted_terms': true,
+        if (ref != null && ref.trim().isNotEmpty) 'ref': ref.trim().toUpperCase(),
       }));
 
   @override

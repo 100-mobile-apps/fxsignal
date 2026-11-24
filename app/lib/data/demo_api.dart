@@ -80,7 +80,7 @@ class DemoApi extends Api {
   }
 
   @override
-  Future<AuthResult> register(String name, String email, String password) async {
+  Future<AuthResult> register(String name, String email, String password, {String? ref}) async {
     await _delay();
     _validate(email, password);
     return _session(await _saveUser(AppUser(

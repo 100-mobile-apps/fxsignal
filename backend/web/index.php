@@ -40,6 +40,7 @@ $routes = [
     '#^/tools$#' => 'page_tools_public',
     '#^/(terms|privacy|risk|affiliate-terms)$#' => 'page_legal',
     '#^/sitemap\.xml$#' => 'page_sitemap',
+    '#^/robots\.txt$#' => 'page_robots',
     '#^/r/(?P<code>[A-Za-z0-9]{4,20})$#' => 'page_ref',
     '#^/go/broker$#' => 'page_go_broker',
     // auth

@@ -212,6 +212,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _ref = TextEditingController();
+  bool _showRef = false;
   bool _accepted = false;
   bool _busy = false;
 
@@ -220,6 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _name.dispose();
     _email.dispose();
     _password.dispose();
+    _ref.dispose();
     super.dispose();
   }
 
@@ -232,7 +235,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     FocusScope.of(context).unfocus();
     setState(() => _busy = true);
     try {
-      await context.read<SessionStore>().register(_name.text, _email.text, _password.text);
+      await context
+          .read<SessionStore>()
+          .register(_name.text, _email.text, _password.text, ref: _ref.text);
       if (mounted) {
         Navigator.of(context).pushReplacement(MaterialPageRoute(
             builder: (_) => const VerifyEmailScreen(afterSignup: true)));
@@ -286,11 +291,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 validator: validateNewPassword,
                 onSubmitted: _submit,
               ),
+              if (_showRef) ...[
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _ref,
+                  textCapitalization: TextCapitalization.characters,
+                  autocorrect: false,
+                  validator: (v) {
+                    final t = (v ?? '').trim();
+                    if (t.isEmpty) return null;
+                    return RegExp(r'^[A-Za-z0-9]{4,12}$').hasMatch(t)
+                        ? null
+                        : 'Codes are 4–12 letters and numbers';
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Referral code (optional)',
+                    prefixIcon: Icon(Icons.card_giftcard_rounded, color: AppColors.text3),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
         const SizedBox(height: 6),
         const Text('  At least 8 characters with letters and numbers.', style: AppText.label),
+        if (!_showRef)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () => setState(() => _showRef = true),
+              child: const Text('Have a referral code?', style: TextStyle(color: AppColors.gold)),
+            ),
+          ),
         const SizedBox(height: 18),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
