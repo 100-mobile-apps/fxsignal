@@ -12,7 +12,6 @@ import '../core/config.dart';
 import '../data/api.dart';
 import '../data/remote_api.dart';
 import '../models/models.dart';
-import '../state/bot_store.dart';
 
 const _uniqueTask = 'signal-poll-unique';
 const _taskName = 'pollSignals';
@@ -58,12 +57,6 @@ void backgroundSignalDispatcher() {
         for (final signal in closed.items) signal.id: signal,
       };
       final signals = signalsById.values.toList();
-      // Trading bot (Deriv auto-trading, if the user switched it on)
-      try {
-        await BotEngine.runDeriv(running.items, premium: user.premium);
-      } catch (error) {
-        debugPrint('Bot run failed: $error');
-      }
       final prefs = await SharedPreferences.getInstance();
       await prefs.reload();
       final key = _eventsKey(user.id);
@@ -226,14 +219,7 @@ class BackgroundSignalService {
         }
       }
       if (generation != _generation) return;
-      // The trading bot needs the background check even when alerts come by push or are off.
-      final botOn = (await BotEngine.settings()).derivOn;
       if (primaryPushReady || (!user.notifications.signals && !user.notifications.results)) {
-        if (botOn) {
-          await _setAlerts(false);
-          await ensureScheduled();
-          return;
-        }
         await Workmanager().cancelByUniqueName(_uniqueTask);
         await _notifications.cancelAll();
         _pendingSignal = null;
@@ -246,11 +232,6 @@ class BackgroundSignalService {
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
           ?.requestNotificationsPermission();
       if (allowed == false) {
-        if (botOn) {
-          await _setAlerts(false);
-          await ensureScheduled();
-          return;
-        }
         await Workmanager().cancelByUniqueName(_uniqueTask);
         await _notifications.cancelAll();
         _pendingSignal = null;
@@ -282,7 +263,7 @@ class BackgroundSignalService {
   static Future<void> _setAlerts(bool on) async =>
       (await SharedPreferences.getInstance()).setBool(_alertsKey, on);
 
-  /// Schedules the background check (signal alerts and the trading bot).
+  /// Schedules the background check for signal alerts.
   static Future<void> ensureScheduled() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android || AppConfig.isDemo) return;
     try {

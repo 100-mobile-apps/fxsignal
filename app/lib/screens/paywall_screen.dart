@@ -120,7 +120,6 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 'Why-this-signal reasons and chart levels',
                 'Gold, Bitcoin and Ethereum signals',
                 'Strongest forex setups (above 70% strength)',
-                'Trading bot: auto-pilot, copy-trade and Deriv',
               ])
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10, left: 4),
