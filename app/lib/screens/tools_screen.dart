@@ -7,7 +7,7 @@ import '../core/format.dart';
 import '../core/theme.dart';
 import '../state/data_stores.dart';
 import '../widgets/common.dart';
-import 'bot_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const _fallbackPrice = {
   'USD/JPY': 150.0,
@@ -55,18 +55,18 @@ class _ToolsScreenState extends State<ToolsScreen> {
             child: GlassCard(
               gradient: AppColors.cardGradient,
               borderColor: AppColors.gold.withValues(alpha: 0.6),
-              onTap: () => openBot(context),
+              onTap: () => launchUrl(Uri.parse(AppConfig.botUrl), mode: LaunchMode.externalApplication),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: const Row(children: [
                 Icon(Icons.smart_toy_rounded, color: AppColors.gold),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Trading bot', style: AppText.title),
-                    Text('Auto-pilot, copy trade and Deriv auto-trading', style: AppText.caption),
+                    Text('Trading bot · on the web', style: AppText.title),
+                    Text('Let the bot follow these signals for you. Opens our website.', style: AppText.caption),
                   ]),
                 ),
-                Icon(Icons.chevron_right_rounded, color: AppColors.text2),
+                Icon(Icons.open_in_new_rounded, color: AppColors.text2),
               ]),
             ),
           ),

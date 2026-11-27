@@ -8,13 +8,17 @@ class AppConfig {
   static const String apiBaseUrl =
       String.fromEnvironment('API_URL', defaultValue: 'https://forexsignal.100apkgoals.com/api');
 
+  /// Website (member area, trading bot). The bot lives on the web only.
+  static const String webUrl = 'https://forexsignal.100apkgoals.com';
+  static const String botUrl = '$webUrl/bot?src=app';
+
   static const String appName = 'Forex Signals Live';
   static const String supportEmail = 'swalafblog@gmail.com';
-  static const String version = '1.2.2';
+  static const String version = '1.2.4';
 
-  /// Must match the build number in pubspec.yaml (version: 1.2.2+8). The server
+  /// Must match the build number in pubspec.yaml (version: 1.2.4+10). The server
   /// asks app builds older than its 'min_app_build' to update.
-  static const int build = 8;
+  static const int build = 10;
 
   // Google Play subscription products (Play Console → Monetize → Subscriptions).
   static const String monthlyProduct = 'fx_premium_monthly';

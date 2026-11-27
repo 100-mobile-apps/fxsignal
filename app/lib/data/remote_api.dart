@@ -213,9 +213,6 @@ class RemoteApi extends Api {
     );
   }
 
-  @override
-  Future<Map<String, dynamic>> botConfig() async =>
-      ((await _req('GET', '/health'))['bot'] as Map?)?.cast<String, dynamic>() ?? const {};
 
   Future<bool> pushEnabled() async =>
       (await _req('GET', '/health'))['push_enabled'] == true;

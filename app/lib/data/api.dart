@@ -48,8 +48,6 @@ abstract class Api {
   /// Uses the free-user unlock on one Premium signal.
   Future<(TradeSignal, AppUser)> freeUnlock(int signalId);
 
-  /// Trading bot switches from the server (/health → bot).
-  Future<Map<String, dynamic>> botConfig();
 
   /// Sends a Google Play purchase to the server, which checks it with Google
   /// and returns the account with premium switched on.
