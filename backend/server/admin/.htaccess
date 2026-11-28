@@ -1,0 +1,4 @@
+# /admin is its own page: don't send it through the API router
+DirectoryIndex index.php
+Options -Indexes
+RewriteEngine On

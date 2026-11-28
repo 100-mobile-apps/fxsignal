@@ -1,0 +1,7 @@
+# Apache/cPanel only (nginx uses DEPLOY_WEB.md). Document root = backend/web.
+Options -Indexes
+RewriteEngine On
+RewriteRule ^(lib|pages)(/|$) - [F,L]
+RewriteCond %{REQUEST_URI} !^/(api|admin)(/|$)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
