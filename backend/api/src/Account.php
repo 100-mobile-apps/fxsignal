@@ -79,4 +79,23 @@ final class Account
         Db::exec('UPDATE users SET watchlist = ? WHERE id = ?', [json_encode($symbols), $u['id']]);
         self::me();
     }
+
+    /** PUT /me/preferences: strategy (null = always the best one), account size and risk percent for the money figures. */
+    public static function preferences(): void
+    {
+        $u = Auth::user();
+        $b = Http::body();
+        $strategy = $u['strategy'];
+        if (array_key_exists('strategy', $b)) {
+            $v = $b['strategy'];
+            if ($v !== null && (!is_string($v) || !Strategies::valid($v) || !in_array($v, Strategies::keys(), true))) throw new ApiError('Unknown strategy', 422);
+            $strategy = $v;
+        }
+        $account = array_key_exists('account_size', $b) ? (float) $b['account_size'] : $u['account_size'];
+        if ($account !== null && ($account < 10 || $account > 10000000)) throw new ApiError('Account size must be between 10 and 10,000,000', 422);
+        $risk = array_key_exists('risk_pct', $b) ? (float) $b['risk_pct'] : $u['risk_pct'];
+        if ($risk !== null && ($risk < 0.1 || $risk > 50)) throw new ApiError('Risk must be between 0.1% and 50%', 422);
+        Db::exec('UPDATE users SET strategy = ?, account_size = ?, risk_pct = ? WHERE id = ?', [$strategy, $account, $risk, $u['id']]);
+        self::me();
+    }
 }

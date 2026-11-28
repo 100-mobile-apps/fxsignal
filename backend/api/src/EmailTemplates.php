@@ -89,17 +89,21 @@ HTML;
     public static function code(string $name, string $code, string $purpose): array
     {
         $app = (string) config('app_name', 'FX Signals');
-        $verify = $purpose === 'verify';
-        $subject = $verify ? "Verify your email for $app" : "$app password reset code";
-        $lead = $verify
-            ? 'Enter this code in the app to confirm your email address and turn on email alerts.'
-            : 'Enter this code in the app to choose a new password.';
+        $remind = $purpose === 'remind';
+        $verify = $purpose === 'verify' || $remind;
+        $subject = $remind ? "You're missing your $app alerts: verify your email" : ($verify ? "Verify your email for $app" : "$app password reset code");
+        $lead = $remind
+            ? 'Your email isn\'t verified yet, so signal and result alerts can\'t reach you. Open the app, go to verify your email, and enter this code.'
+            : ($verify
+                ? 'Enter this code in the app to confirm your email address and turn on email alerts.'
+                : 'Enter this code in the app to choose a new password.');
+        $expires = $remind ? '48 hours' : '15 minutes';
         $inner = '<div style="font-size:20px;font-weight:700;color:#F4F6FB">Hi ' . self::e($name) . ',</div>'
             . '<p style="font-size:15px;line-height:1.6;color:#AEB6C8;margin:10px 0 0">' . $lead . '</p>'
             . '<div style="margin:22px 0 6px;padding:18px;border-radius:14px;background:#0B1019;border:1px solid #2A3650;text-align:center;font:800 34px Consolas,Menlo,monospace;letter-spacing:10px;color:#F5B942">' . $code . '</div>'
-            . '<p style="font-size:13px;color:#6B7690;margin:10px 0 0">The code expires in 15 minutes. If you didn\'t request it, you can ignore this email.</p>';
+            . '<p style="font-size:13px;color:#6B7690;margin:10px 0 0">The code expires in ' . $expires . '. If you didn\'t request it, you can ignore this email.</p>';
         $html = self::layout("Your code is $code", $inner, null, 'You received this because a code was requested for your account.');
-        $text = "Hi $name,\n\n$lead\n\nYour code: $code\n\nIt expires in 15 minutes.\n\n— $app";
+        $text = "Hi $name,\n\n$lead\n\nYour code: $code\n\nIt expires in $expires.\n\n— $app";
         return [$subject, $html, $text];
     }
 
@@ -120,7 +124,7 @@ HTML;
             . '<div style="margin-top:6px;font-size:13px;color:#8A93A8">Strength ' . (int) $s['confidence'] . '% · Published ' . gmdate('M j, H:i', strtotime($s['opened_at'] . ' UTC')) . ' UTC</div>'
             . self::levelsTable($s)
             . ($reasonHtml ? '<div style="margin-top:18px;font-size:14px;font-weight:700;color:#F4F6FB">Why this signal</div>' . $reasonHtml : '')
-            . '<p style="margin:18px 0 0;font-size:13px;line-height:1.55;color:#8A93A8">After TP1 is reached, move your stop loss to entry. Risk 1–2% of your account at most.</p>'
+            . '<p style="margin:18px 0 0;font-size:13px;line-height:1.55;color:#8A93A8">Tip: split your size into two trades, one with TP1 and one with TP2. When TP1 closes, move the other trade\'s stop loss to entry; when price is halfway to TP2, move it to TP1. We\'ll alert you at each step. Risk 1–2% of your account in total.</p>'
             . self::button('Open the app for the live chart');
         $text = "New signal: {$s['direction']} $pair\nEntry: " . self::fmt($pair, $s['entry']) . "\nStop loss: " . self::fmt($pair, $s['stop_loss'])
             . "\nTP1: " . self::fmt($pair, $s['tp1']) . "\nTP2: " . self::fmt($pair, $s['tp2']) . "\nStrength: {$s['confidence']}%\n\n"
@@ -140,7 +144,7 @@ HTML;
             'tp2' => ["$pair hit TP2", 'Full target reached.'],
             'sl' => ["$pair stopped out", 'The stop loss was hit. Losses are part of any strategy; keep your risk per trade small.'],
             default => [$win ? "$pair closed in profit" : "$pair closed", $s['result'] === 'tp1'
-                ? 'TP1 was reached and the rest closed at break-even.'
+                ? 'TP1 was banked on half the trade and the TP2 half closed at entry.'
                 : 'The signal reached its time limit and closed at the market price.'],
         };
         $icon = $kind === 'sl' ? '✕' : ($win ? '✓' : '•');

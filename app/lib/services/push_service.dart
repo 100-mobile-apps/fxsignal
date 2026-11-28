@@ -87,28 +87,36 @@ class PushService {
         s.authorizationStatus == AuthorizationStatus.provisional;
   }
 
-  Future<bool> sync(NotificationPrefs prefs) {
+  static const _strategies = ['steady', 'adaptive', 'high_reward', 'classic', 'win90'];
+
+  Future<bool> sync(NotificationPrefs prefs, {String strategy = 'classic'}) {
     if (!available) return Future.value(false);
     final generation = ++_generation;
     final task = _operations.then((_) =>
-        generation == _generation ? _syncTopics(prefs) : Future.value(false));
+        generation == _generation ? _syncTopics(prefs, strategy) : Future.value(false));
     _operations = task.then<void>((_) {});
     return task;
   }
 
-  Future<bool> _syncTopics(NotificationPrefs prefs) async {
+  Future<bool> _syncTopics(NotificationPrefs prefs, String strategy) async {
     final fm = FirebaseMessaging.instance;
     try {
       await (prefs.reports ? fm.subscribeToTopic('reports') : fm.unsubscribeFromTopic('reports'));
       for (final pair in AppConfig.pairs) {
         final k = _key(pair);
         final want = prefs.wantsPair(pair);
-        await (prefs.signals && want
-            ? fm.subscribeToTopic('signals_$k')
-            : fm.unsubscribeFromTopic('signals_$k'));
-        await (prefs.results && want
-            ? fm.subscribeToTopic('results_$k')
-            : fm.unsubscribeFromTopic('results_$k'));
+        // The old per-market topic only carries the classic strategy; strategy topics replace it.
+        await fm.unsubscribeFromTopic('signals_$k');
+        await fm.unsubscribeFromTopic('results_$k');
+        for (final s in _strategies) {
+          final mine = s == strategy;
+          await (prefs.signals && want && mine
+              ? fm.subscribeToTopic('signals_${k}_$s')
+              : fm.unsubscribeFromTopic('signals_${k}_$s'));
+          await (prefs.results && want && mine
+              ? fm.subscribeToTopic('results_${k}_$s')
+              : fm.unsubscribeFromTopic('results_${k}_$s'));
+        }
       }
       return true;
     } catch (e) {
@@ -130,6 +138,10 @@ class PushService {
       for (final pair in AppConfig.pairs) {
         await fm.unsubscribeFromTopic('signals_${_key(pair)}');
         await fm.unsubscribeFromTopic('results_${_key(pair)}');
+        for (final s in _strategies) {
+          await fm.unsubscribeFromTopic('signals_${_key(pair)}_$s');
+          await fm.unsubscribeFromTopic('results_${_key(pair)}_$s');
+        }
       }
     } catch (e) {
       debugPrint('Could not unsubscribe every FCM topic: $e');
